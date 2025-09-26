@@ -7,7 +7,7 @@
 #include "core.hpp"
 #include "RenderUtils.hpp"
 #include "callbacks.hpp"
-
+#include "Particle.h"
 #include <iostream>
 
 std::string display_text = "This is a test";
@@ -17,7 +17,7 @@ using namespace physx;
 
 PxDefaultAllocator		gAllocator;
 PxDefaultErrorCallback	gErrorCallback;
-
+Particle* p;
 PxFoundation*			gFoundation = NULL;
 PxPhysics*				gPhysics	= NULL;
 
@@ -55,10 +55,15 @@ void initPhysics(bool interactive)
 	sceneDesc.simulationEventCallback = &gContactReportCallback;
 	gScene = gPhysics->createScene(sceneDesc);
 
-	PxSphereGeometry sphere(10.0f);
+	p = new Particle(
+		Vector3(0.0f, 60.0f, 0.0f),
+		Vector3(15.0f, 0.0f, 0.0f),
+		Vector3(0.0f, -9.8f, 0.0f),
+		0.99f,
+		2.0f,
+		Vector4(1.0f, 0.0f, 0.0f, 1.0f)
+	);
 
-	RenderItem* renderItem = new RenderItem(CreateShape(sphere, gMaterial), Vector4(0.0f, 1.0f, 0.0f, 1.0f));
-	RegisterRenderItem(renderItem);
 	}
 
 
@@ -68,7 +73,7 @@ void initPhysics(bool interactive)
 void stepPhysics(bool interactive, double t)
 {
 	PX_UNUSED(interactive);
-
+	p->intergrateVerlet(t);
 	gScene->simulate(t);
 	gScene->fetchResults(true);
 }
