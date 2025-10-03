@@ -17,7 +17,6 @@ using namespace physx;
 
 PxDefaultAllocator		gAllocator;
 PxDefaultErrorCallback	gErrorCallback;
-Particle* p;
 PxFoundation*			gFoundation = NULL;
 PxPhysics*				gPhysics	= NULL;
 
@@ -29,7 +28,7 @@ PxPvd*                  gPvd        = NULL;
 PxDefaultCpuDispatcher*	gDispatcher = NULL;
 PxScene*				gScene      = NULL;
 ContactReportCallback gContactReportCallback;
-
+std::vector<Particle*> projectiles;
 
 // Initialize physics engine
 void initPhysics(bool interactive)
@@ -55,14 +54,16 @@ void initPhysics(bool interactive)
 	sceneDesc.simulationEventCallback = &gContactReportCallback;
 	gScene = gPhysics->createScene(sceneDesc);
 
-	p = new Particle(
-		Vector3(0.0f, 60.0f, 0.0f),
-		Vector3(15.0f, 0.0f, 0.0f),
+	/*p = new Particle(
+		Vector3(0.0f, 40.0f, 0.0f),
+		Vector3(35.0f, 0.0f, 0.0f),
 		Vector3(0.0f, -9.8f, 0.0f),
 		0.99f,
 		2.0f,
-		Vector4(1.0f, 0.0f, 0.0f, 1.0f)
-	);
+		Vector4(0.0f, 0.0f, 0.0f, 1.0f)
+	);*/
+
+
 
 	}
 
@@ -73,11 +74,31 @@ void initPhysics(bool interactive)
 void stepPhysics(bool interactive, double t)
 {
 	PX_UNUSED(interactive);
-	p->intergrateVerlet(t);
+	for (auto proj : projectiles) {
+		proj->intergrateEulerSemiExplicit(t);
+	}
 	gScene->simulate(t);
 	gScene->fetchResults(true);
 }
-
+void Shoot() 
+{
+	Vector3 shootPos = GetCamera()->getEye();
+	Vector3 shootDir = GetCamera()->getDir();
+	shootDir.normalize();
+	float speed = 82.0f;
+	float desiredSpeed = 50.0f;
+	Particle* proj = new Particle(
+		shootPos,
+		PxVec3(speed*shootDir.x, speed *shootDir.y, speed * shootDir.z),
+		PxVec3(desiredSpeed* shootDir.x, desiredSpeed * shootDir.y, desiredSpeed * shootDir.z),
+		PxVec3(0.0f, -9.8f, 0.0f),
+		50.0f,
+		0.99f,
+		2.0f,
+		Vector4(1.0f, 1.0f, 1.0f, 1.0f)
+	);
+	projectiles.push_back(proj);
+}
 // Function to clean data
 // Add custom code to the begining of the function
 void cleanupPhysics(bool interactive)
@@ -105,8 +126,9 @@ void keyPress(unsigned char key, const PxTransform& camera)
 	{
 	//case 'B': break;
 	//case ' ':	break;
-	case ' ':
+	case 'P':
 	{
+		Shoot();
 		break;
 	}
 	default:
