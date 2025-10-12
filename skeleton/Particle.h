@@ -28,6 +28,8 @@ public:
 	void intergrateEulerExplicit(double dt);
 	void intergrateEulerSemiExplicit(double dt);
 	void intergrateVerlet(double dt);
+	void OnDeath(double dt);
+	Vector3 getPos() { return position; }
 private:
 	Vector3 position;
 	Vector3 velocity;
@@ -39,5 +41,5 @@ private:
 	float mass;
 	PxTransform transform;  
 	RenderItem* renderItem; 
-
+	float timeRemaining;
 };

@@ -9,7 +9,7 @@
 #include "callbacks.hpp"
 #include "Particle.h"
 #include <iostream>
-
+#include "ParticleSystem.h"
 std::string display_text = "This is a test";
 
 
@@ -20,7 +20,7 @@ PxDefaultErrorCallback	gErrorCallback;
 PxFoundation*			gFoundation = NULL;
 PxPhysics*				gPhysics	= NULL;
 
-
+ParticleSystem* gParticleSystem = nullptr;
 PxMaterial*				gMaterial	= NULL;
 
 PxPvd*                  gPvd        = NULL;
@@ -44,6 +44,22 @@ void initPhysics(bool interactive)
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(),true,gPvd);
 
 	gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+	// Crear el sistema de partículas
+	gParticleSystem = new ParticleSystem();
+
+
+	EmitterData fountain;
+	fountain.position = PxVec3(0.0f, 1.0f, 0.0f);
+	fountain.positionVar = PxVec3(0.2f, 0.1f, 0.2f);
+	fountain.emitRate = 100.0f;
+	fountain.particleLife = 3.0f;
+	fountain.particleRadius = 0.15f;
+	fountain.color = Vector4(0.2f, 0.6f, 1.0f, 1.0f);
+	fountain.velDist = VelocityDistribution::GAUSSIAN;
+	fountain.velMean = PxVec3(0.0f, 6.0f, 0.0f);
+	fountain.velStdDev = PxVec3(1.0f, 1.0f, 1.0f);
+
+	gParticleSystem->addEmitter(fountain);
 
 	// For Solid Rigids +++++++++++++++++++++++++++++++++++++
 	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
@@ -77,6 +93,7 @@ void stepPhysics(bool interactive, double t)
 	for (auto proj : projectiles) {
 		proj->intergrateEulerSemiExplicit(t);
 	}
+	if (gParticleSystem) gParticleSystem->update(t);
 	gScene->simulate(t);
 	gScene->fetchResults(true);
 }
@@ -113,7 +130,11 @@ void cleanupPhysics(bool interactive)
 	PxPvdTransport* transport = gPvd->getTransport();
 	gPvd->release();
 	transport->release();
-	
+	if (gParticleSystem) {
+		delete gParticleSystem;
+		gParticleSystem = nullptr;
+	}
+
 	gFoundation->release();
 	}
 
