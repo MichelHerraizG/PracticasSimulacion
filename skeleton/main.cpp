@@ -10,6 +10,9 @@
 #include "Particle.h"
 #include <iostream>
 #include "ParticleSystem.h"
+#include "ForceTypes.h"
+#include "Gravity.h"
+#include "Wind.h"
 std::string display_text = "This is a test";
 
 
@@ -29,7 +32,10 @@ PxDefaultCpuDispatcher*	gDispatcher = NULL;
 PxScene*				gScene      = NULL;
 ContactReportCallback gContactReportCallback;
 std::vector<Particle*> projectiles;
-
+ForceTypes gForceTypes;
+Gravity* gEarthGravity = nullptr;
+Gravity* gWeakGravity = nullptr;
+Wind* gWind = nullptr;
 // Initialize physics engine
 void initPhysics(bool interactive)
 {
@@ -46,6 +52,13 @@ void initPhysics(bool interactive)
 	gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
 	// Crear el sistema de partículas
 	gParticleSystem = new ParticleSystem();
+
+  gEarthGravity =
+          new Gravity(PxVec3(0.0f, -9.8f, 0.0f));  // gravedad normal
+        gWeakGravity =
+          new Gravity(PxVec3(0.0f, -3.0f, 0.0f));  // gravedad más débil
+
+  gWind = new Wind(Vector3(500.0f, 0.0f, 0.0f), 0.2f); 
 
 
 	EmitterData fountain;
@@ -70,14 +83,7 @@ void initPhysics(bool interactive)
 	sceneDesc.simulationEventCallback = &gContactReportCallback;
 	gScene = gPhysics->createScene(sceneDesc);
 
-	/*p = new Particle(
-		Vector3(0.0f, 40.0f, 0.0f),
-		Vector3(35.0f, 0.0f, 0.0f),
-		Vector3(0.0f, -9.8f, 0.0f),
-		0.99f,
-		2.0f,
-		Vector4(0.0f, 0.0f, 0.0f, 1.0f)
-	);*/
+	
 
 
 
@@ -90,8 +96,9 @@ void initPhysics(bool interactive)
 void stepPhysics(bool interactive, double t)
 {
 	PX_UNUSED(interactive);
+  gForceTypes.updateForces(t);
 	for (auto proj : projectiles) {
-		proj->intergrateEulerSemiExplicit(t);
+		proj->integrateForces(t);
 	}
 	if (gParticleSystem) gParticleSystem->update(t);
 	gScene->simulate(t);
@@ -102,18 +109,23 @@ void Shoot()
 	Vector3 shootPos = GetCamera()->getEye();
 	Vector3 shootDir = GetCamera()->getDir();
 	shootDir.normalize();
-	float speed = 82.0f;
+	float speed = 60.0f;
+        float mass = 5.0f;
 	float desiredSpeed = 50.0f;
-	Particle* proj = new Particle(
-		shootPos,
-		PxVec3(speed*shootDir.x, speed *shootDir.y, speed * shootDir.z),
-		PxVec3(desiredSpeed* shootDir.x, desiredSpeed * shootDir.y, desiredSpeed * shootDir.z),
-		PxVec3(0.0f, -9.8f, 0.0f),
-		50.0f,
-		0.99f,
-		2.0f,
-		Vector4(1.0f, 1.0f, 1.0f, 1.0f)
-	);
+        Particle* proj = new Particle(
+          shootPos,
+          PxVec3(speed * shootDir.x, speed * shootDir.y, speed * shootDir.z),
+          mass,
+          0.99f,
+          0.4f,
+          Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+        static bool alternate = false;
+        if (alternate)
+          gForceTypes.add(proj, gEarthGravity);  // gravedad normal
+        else
+          gForceTypes.add(proj, gWeakGravity);  // gravedad débil
+        gForceTypes.add(proj, gWind);
+        alternate = !alternate;
 	projectiles.push_back(proj);
 }
 // Function to clean data
@@ -134,6 +146,11 @@ void cleanupPhysics(bool interactive)
 		delete gParticleSystem;
 		gParticleSystem = nullptr;
 	}
+
+        if (gEarthGravity)
+          delete gEarthGravity;
+        if (gWeakGravity)
+          delete gWeakGravity;
 
 	gFoundation->release();
 	}
