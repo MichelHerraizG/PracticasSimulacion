@@ -30,6 +30,8 @@
     <ClInclude Include="Gravity.h" />
     <ClInclude Include="ForceTypes.h" />
     <ClInclude Include="Wind.h" />
+    <ClInclude Include="Vortex.h" />
+    <ClInclude Include="Explosion.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Render">

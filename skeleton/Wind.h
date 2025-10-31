@@ -30,4 +30,8 @@ public:
 
     particle->addForce(force);
   }
+  void setWindVelocity(const Vector3& wVel) { windVelocity = wVel; }
+
+  
+  const Vector3& getWindVelocity() const { return windVelocity; }
 };

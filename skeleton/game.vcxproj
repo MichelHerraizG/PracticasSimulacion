@@ -264,6 +264,7 @@
   <ItemGroup>
     <ClInclude Include="callbacks.hpp" />
     <ClInclude Include="core.hpp" />
+    <ClInclude Include="Explosion.h" />
     <ClInclude Include="ForceGenerator.h" />
     <ClInclude Include="ForceTypes.h" />
     <ClInclude Include="Gravity.h" />
@@ -273,6 +274,7 @@
     <ClInclude Include="Render\Camera.h" />
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="Vector3D.h" />
+    <ClInclude Include="Vortex.h" />
     <ClInclude Include="Wind.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
