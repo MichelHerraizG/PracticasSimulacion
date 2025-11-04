@@ -46,6 +46,7 @@ Wind* gWind = nullptr;
 Vortex* gVortex = nullptr;
 Explosion* gExplosion = nullptr;
 AimingReticle* gAimingReticle = nullptr;
+const float RETICLEROT = 0.02f;
 // Initialize physics engine
 void initPhysics(bool interactive)
 {
@@ -85,38 +86,42 @@ void initPhysics(bool interactive)
     Vector4(1, 1, 1, 1)  
   );
   // RETÍCULA
-  gAimingReticle = new AimingReticle(2.0f);
+  gAimingReticle = new AimingReticle(3.0f);
   // FUERZAS
   gEarthGravity = new Gravity(PxVec3(0.0f, -9.8f, 0.0f));
+  gWind = new Wind(Vector3(-20, 0, 0));
   //gWeakGravity = new Gravity(PxVec3(0.0f, -3.0f, 0.0f));
   //gVortex = new Vortex(Vector3(0.0f, 0.0f, 0.0f), 40.0f, 50.0f);
   //gExplosion = new Explosion(Vector3(0.0f, 0.0f, 0.0f), 3000.0f, 30.0f, 1.0f);
   gForceTypes.add(gSoccerBall, gEarthGravity);
+  gForceTypes.add(gSoccerBall, gWind);
 }
 
 void Kick()
 {
-  if (gSoccerBall) {
-    Vector3 kickdir;
+    if (gSoccerBall && gAimingReticle) 
+    {
+        Vector3 kickdir = gAimingReticle->getAimDirection();
 
-    if (gCurrentShotType == SoccerBall::POWER_SHOT) {
-      kickdir = Vector3(GetCamera()->getDir().x, 0.3f, GetCamera()->getDir().z);
+        gSoccerBall->setShotType(gCurrentShotType);
+        gSoccerBall->SetInPlay(true);
+        gSoccerBall->kick(kickdir, 2.0f);
     }
-    else {
-      kickdir = Vector3(GetCamera()->getDir().x, 0.1f, GetCamera()->getDir().z);
-    }
-
-    kickdir.normalize();
-    gSoccerBall->setShotType(gCurrentShotType);
-    gSoccerBall->SetInPlay(true);
-    gSoccerBall->kick(kickdir, 2.0f);
-  }
 }
 void ToggleShotType()
 {
-  gCurrentShotType = (gCurrentShotType == SoccerBall::POWER_SHOT) ?
-                       SoccerBall::PRECISION_SHOT :
-                       SoccerBall::POWER_SHOT;
+    gCurrentShotType = (gCurrentShotType == SoccerBall::POWER_SHOT) ?
+        SoccerBall::PRECISION_SHOT :
+        SoccerBall::POWER_SHOT;
+
+    if (gAimingReticle) {
+        if (gCurrentShotType == SoccerBall::POWER_SHOT) {
+            gAimingReticle->setColor(Vector4(1.0f, 0.0f, 0.0f, 1.0f));
+        }
+        else {
+            gAimingReticle->setColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+        }
+    }
 }
 void ResetSoccerBall()
 {
@@ -139,15 +144,8 @@ void stepPhysics(bool interactive, double t)
   for (auto proj : projectiles) {
     proj->integrateForces(t);
   }
-  if (gAimingReticle && !gSoccerBall->isInPlay()) {
-    Vector3 aimDir = GetCamera()->getDir();
-    aimDir.y = 0;  
-    aimDir.normalize();
-
-    
-    float power = 1.0f;
-
-    gAimingReticle->update(gSoccerBall->getPos(), aimDir, power);
+  if (gAimingReticle && gSoccerBall && !gSoccerBall->isInPlay()) {
+      gAimingReticle->update(gSoccerBall->getPos());
   }
   if (gParticleSystem)
     gParticleSystem->update(t);
@@ -230,6 +228,18 @@ void keyPress(unsigned char key, const PxTransform& camera)
   PX_UNUSED(camera);
 
   switch (toupper(key)) {
+  case 'A':
+      gAimingReticle->rotateLeft(RETICLEROT);
+      break;
+  case 'D':
+      gAimingReticle->rotateRight(RETICLEROT);
+      break;
+  case 'W':
+      gAimingReticle->rotateUp(RETICLEROT);
+      break;
+  case 'S':
+      gAimingReticle->rotateDown(RETICLEROT);
+      break;
     case 'P': {
       Shoot();
       break;

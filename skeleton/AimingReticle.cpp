@@ -1,87 +1,96 @@
 #include "AimingReticle.h"
+#include <cmath>
 
 extern physx::PxPhysics* gPhysics;
 extern physx::PxMaterial* gMaterial;
 
-AimingReticle::AimingReticle(float radius)
-  : baseRadius(radius)
-  , currentRadius(radius)
-  , visible(true)
+AimingReticle::AimingReticle(float distance)
+    : horizontalAngle(0.0f)
+    , verticalAngle(0.0f)
+    , aimDistance(distance)
+    , visible(true)
 {
-  
-  PxSphereGeometry sphereGeom(0.05f);
-  circleItem = new RenderItem(CreateShape(sphereGeom, gMaterial),
-                              Vector4(1.0f, 1.0f, 0.0f, 1.0f)); 
+    PxBoxGeometry lineGeom(0.03f, 0.03f, aimDistance * 0.5f);
+    directionLine = new RenderItem(CreateShape(lineGeom, gMaterial),
+        Vector4(1.0f, 0.0f, 0.0f, 1.0f));
 
-  PxBoxGeometry lineGeom(0.02f, 0.02f, 1.0f); 
-  directionLine = new RenderItem(CreateShape(lineGeom, gMaterial),
-                                 Vector4(1.0f, 0.0f, 0.0f, 1.0f)); 
-
-  circleTransform = PxTransform(PxVec3(0, 0, 0));
-  lineTransform = PxTransform(PxVec3(0, 0, 0));
-
-  circleItem->transform = &circleTransform;
-  directionLine->transform = &lineTransform;
+    lineTransform = PxTransform(PxVec3(0, 0, 0));
+    directionLine->transform = &lineTransform;
+    directionLine->transform->rotate(Vector3(180, 0, 0));
 }
 
 AimingReticle::~AimingReticle()
 {
-  if (circleItem) {
-    DeregisterRenderItem(circleItem);
-    delete circleItem;
-  }
-  if (directionLine) {
-    DeregisterRenderItem(directionLine);
-    delete directionLine;
-  }
+    if (directionLine) {
+        DeregisterRenderItem(directionLine);
+        delete directionLine;
+    }
 }
 
-void AimingReticle::setVisible(bool isVisible)
+void AimingReticle::rotateLeft(float angle)
 {
-  visible = isVisible;
+    horizontalAngle += angle;
 }
 
-void AimingReticle::update(const PxVec3& position,
-                           const PxVec3& direction,
-                           float power)
+void AimingReticle::rotateRight(float angle)
 {
-  if (!visible)
-    return;
+    horizontalAngle -= angle;
+}
 
+void AimingReticle::rotateUp(float angle)
+{
+    verticalAngle += angle;
+    if (verticalAngle > PxPi / 3.0f) verticalAngle = PxPi / 3.0f;
+}
 
-  currentRadius = baseRadius * (0.5f + power * 0.5f);
+void AimingReticle::rotateDown(float angle)
+{
+    verticalAngle -= angle;
+    if (verticalAngle < 0.0f) verticalAngle = 0.0f;
+}
 
+PxVec3 AimingReticle::getAimDirection() const
+{
+    float x = cos(verticalAngle) * sin(horizontalAngle);
+    float y = sin(verticalAngle);
+    float z = cos(verticalAngle) * cos(horizontalAngle);
 
-  PxVec3 reticlePos =
-    position + PxVec3(0, 0.1f, 0);  
-  circleTransform = PxTransform(reticlePos);
+    PxVec3 dir(x, y, z);
+    dir.normalize();
+    return dir;
+}
 
+void AimingReticle::update(const PxVec3& ballPosition)
+{
+    if (!visible) return;
+    updateTransforms(ballPosition);
+}
 
-  PxVec3 lineEnd = reticlePos + direction * (currentRadius + 0.5f);
-  PxVec3 lineCenter = (reticlePos + lineEnd) * 0.5f;
+void AimingReticle::updateTransforms(const PxVec3& ballPosition)
+{
+    PxVec3 aimDir = getAimDirection();
+    PxVec3 lineCenter = ballPosition + aimDir * (aimDistance * 0.5f);
 
+    PxVec3 defaultDir(0, 0, 1);
+    PxVec3 axis = defaultDir.cross(aimDir);
+    float axisLength = axis.magnitude();
 
-  PxVec3 lineDir = direction.getNormalized();
-  float lineLength = (lineEnd - reticlePos).magnitude();
+    PxQuat rotation;
+    if (axisLength > 0.001f) {
+        axis.normalize();
+        float angle = acos(defaultDir.dot(aimDir));
+        rotation = PxQuat(angle, axis);
+    }
+    else {
+        rotation = PxQuat(PxIdentity);
+    }
 
-
-  PxVec3 up(0, 1, 0);
-  PxVec3 axis = up.cross(lineDir);
-  float angle = acos(up.dot(lineDir));
-
-  lineTransform = PxTransform(lineCenter, PxQuat(angle, axis));
-
-  
+    lineTransform = PxTransform(lineCenter, rotation);
 }
 
 void AimingReticle::setColor(const Vector4& color)
 {
-  if (circleItem) {
-    circleItem->color = color;
-  }
-
-  Vector4 lineColor(color.x * 0.7f, color.y * 0.7f, color.z * 0.7f, color.w);
-  if (directionLine) {
-    directionLine->color = lineColor;
-  }
+    if (directionLine) {
+        directionLine->color = color;
+    }
 }
