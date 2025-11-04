@@ -12,6 +12,9 @@
     <ClCompile Include="callbacks.cpp" />
     <ClCompile Include="Particle.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="SoccerBall.cpp" />
+    <ClCompile Include="SoccerField.cpp" />
+    <ClCompile Include="AimingReticle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp" />
@@ -32,6 +35,9 @@
     <ClInclude Include="Wind.h" />
     <ClInclude Include="Vortex.h" />
     <ClInclude Include="Explosion.h" />
+    <ClInclude Include="SoccerBall.h" />
+    <ClInclude Include="SoccerField.h" />
+    <ClInclude Include="AimingReticle.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Render">

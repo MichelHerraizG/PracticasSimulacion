@@ -1,60 +1,65 @@
-
+// ParticleSystem.h
 #pragma once
-
-#include <vector>
-#include <random>
-#include <functional>
 #include "Particle.h"
+#include <random>
+#include <vector>
 
-using namespace physx;
-
-enum class VelocityDistribution{UNIFORM,GAUSSIAN};
+enum class VelocityDistribution { UNIFORM, GAUSSIAN };
 
 struct EmitterData {
-	Vector3 position;
-	Vector3 positionVar;
-	float emitRate;
-	float particleLife;
-	float particleRadius;
-	Vector4 color;
-	VelocityDistribution velDist;
-	Vector3 velMean;
-	Vector3 velStdDev;
+  Vector3 position = Vector3(0, 0, 0);
+  Vector3 positionVar = Vector3(0.1f, 0.1f, 0.1f);
+  float emitRate = 10.0f;
+  float particleLife = 2.0f;
+  float particleRadius = 0.1f;
+  Vector4 color = Vector4(1, 1, 1, 1);
+  float damping = 0.99f;
+  Vector3 gravity = Vector3(0, -9.8f, 0);
 
-	Vector3 velMin;
-	Vector3 velMax;
-	PxVec3 gravity = PxVec3(0.0f, -9.8f, 0.0f);
-	float damping = 0.99f;
-	bool looping = true; // si true el emisor sigue emitiendo
+  VelocityDistribution velDist = VelocityDistribution::UNIFORM;
+  Vector3 velMin = Vector3(-1, -1, -1);
+  Vector3 velMax = Vector3(1, 1, 1);
+  Vector3 velMean = Vector3(0, 0, 0);
+  Vector3 velStdDev = Vector3(1, 1, 1);
 };
 
 class Emitter {
-public:
-	Emitter(const EmitterData& data);
-	void update(double dt, std::vector<Particle*>& particles);
-	const EmitterData& getData() const { return data; }
 private:
-	EmitterData data;
-	double emitAccumulator;
-	std::mt19937 rng;
+  EmitterData data;
+  double emitAccumulator;
+  std::mt19937 rng;
+
+public:
+  Emitter(const EmitterData& data_);
+  void update(double dt, std::vector<Particle*>& particles);
+
+
+  void setPosition(const Vector3& newPos) { data.position = newPos; }
+  const EmitterData& getData() const { return data; }
+  EmitterData& getData() { return data; }
+};
+
+struct ParticleInstance {
+  Particle* p = nullptr;
+  float lifeRemaining = 0.0f;
 };
 
 class ParticleSystem {
-public:
-	ParticleSystem();
-	~ParticleSystem();
-	void addEmitter(const EmitterData& cfg);
-	void update(double dt);
-	void spawnParticle(Particle* p, float lifetime);
 private:
-	struct ParticleInstance {
-		Particle* p;
-		float lifeRemaining;
-	};
+  std::vector<ParticleInstance> particles;
+  std::vector<Emitter> emitters;
+  float removeBelowY = -100.0f;
+  float removeFarDistance = 1000.0f;
 
-	std::vector<Emitter> emitters;
-	std::vector<ParticleInstance> particles;
+public:
+  ParticleSystem();
+  ~ParticleSystem();
 
-	float removeBelowY = -50.0f;
-	float removeFarDistance = 500.0f;
+  void addEmitter(const EmitterData& cfg);
+  void spawnParticle(Particle* p, float lifetime);
+  void update(double dt);
+
+  void clearEmitters() { emitters.clear(); }
+  std::vector<Emitter>& getEmitters() { return emitters; }
+  const std::vector<Emitter>& getEmitters() const { return emitters; }
 };

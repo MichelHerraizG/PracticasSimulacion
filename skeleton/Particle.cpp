@@ -86,6 +86,7 @@ void Particle::addForce(const PxVec3& force)
 {
   forceAccumulator += force;
 }
+
 void Particle::integrateForces(double dt)
 {
   if (inverseMass <= 0.0f)

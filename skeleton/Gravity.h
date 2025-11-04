@@ -21,7 +21,7 @@ public:
       return;
 
 
-    physx::PxVec3 force = gravity * (1.0f / particle->getInverseMass());
+    physx::PxVec3 force = gravity * particle->getMass();
 
     particle->addForce(force);
   }

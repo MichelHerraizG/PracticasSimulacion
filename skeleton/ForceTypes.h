@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 #include "ForceGenerator.h"
 #include "Particle.h"
 #include <vector>

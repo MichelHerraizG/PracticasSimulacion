@@ -40,15 +40,14 @@ public:
   // Setters
 
   void changeAcceleration(Vector3 newAcceleration);
-  void changeMass(float newMass);
+
 
   // Integración 
   void intergrateEulerExplicit(double dt);
   void intergrateEulerSemiExplicit(double dt);
   void intergrateVerlet(double dt);
-  void integrateForces(double dt);
+  virtual void integrateForces(double dt);
 
-  void OnDeath(double dt);
 
 
   // Métodos
@@ -61,7 +60,7 @@ public:
   float getInverseMass() const { return inverseMass; }
   Vector3 getVelocity() const { return velocity; }
 
-private:
+protected:
 
   // Atributos físicos
 
