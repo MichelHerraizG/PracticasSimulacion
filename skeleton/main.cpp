@@ -7,7 +7,7 @@
 #include "callbacks.hpp"
 #include "core.hpp"
 #include "Explosion.h"
-#include "ForceTypes.h"
+#include "ForceGenerador.h"
 #include "Gravity.h"
 #include "Particle.h"
 #include "ParticleSystem.h"
@@ -39,13 +39,18 @@ PxDefaultCpuDispatcher* gDispatcher = NULL;
 PxScene* gScene = NULL;
 ContactReportCallback gContactReportCallback;
 std::vector<Particle*> projectiles;
-ForceTypes gForceTypes;
+ForceGenerador gForceTypes;
+
+// FUERZAS
 Gravity* gEarthGravity = nullptr;
 Gravity* gWeakGravity = nullptr;
 Wind* gWind = nullptr;
 Vortex* gVortex = nullptr;
 Explosion* gExplosion = nullptr;
 AimingReticle* gAimingReticle = nullptr;
+bool gWindEnabled = true;
+bool gGravityEnabled = true;
+bool gExplosionEnabled = false;
 const float RETICLEROT = 0.02f;
 // Initialize physics engine
 void initPhysics(bool interactive)
@@ -92,16 +97,17 @@ void initPhysics(bool interactive)
   gWind = new Wind(Vector3(-20, 0, 0));
   //gWeakGravity = new Gravity(PxVec3(0.0f, -3.0f, 0.0f));
   //gVortex = new Vortex(Vector3(0.0f, 0.0f, 0.0f), 40.0f, 50.0f);
-  //gExplosion = new Explosion(Vector3(0.0f, 0.0f, 0.0f), 3000.0f, 30.0f, 1.0f);
-  gForceTypes.add(gSoccerBall, gEarthGravity);
-  gForceTypes.add(gSoccerBall, gWind);
+  gExplosion = new Explosion(Vector3(0.0f, 0.0f, 0.0f), 3000.0f, 30.0f, 1.0f);
+  gForceTypes.add(gSoccerBall, gEarthGravity, gGravityEnabled);
+  gForceTypes.add(gSoccerBall, gWind, gWindEnabled);
+  gForceTypes.add(gSoccerBall, gExplosion,gExplosionEnabled);
 }
 
 void Kick()
 {
     if (gSoccerBall && gAimingReticle) 
     {
-        Vector3 kickdir = gAimingReticle->getAimDirection();
+        Vector3 kickdir =  Vector3(gAimingReticle->getAimDirection().x,1.0f, gAimingReticle->getAimDirection().z);
 
         gSoccerBall->setShotType(gCurrentShotType);
         gSoccerBall->SetInPlay(true);
@@ -115,7 +121,8 @@ void ToggleShotType()
         SoccerBall::POWER_SHOT;
 
     if (gAimingReticle) {
-        if (gCurrentShotType == SoccerBall::POWER_SHOT) {
+        if (gCurrentShotType == SoccerBall::POWER_SHOT) 
+        {
             gAimingReticle->setColor(Vector4(1.0f, 0.0f, 0.0f, 1.0f));
         }
         else {
@@ -170,11 +177,11 @@ void Shoot()
     Vector4(1.0f, 1.0f, 1.0f, 1.0f));
   static bool alternate = false;
   if (alternate)
-    gForceTypes.add(proj, gEarthGravity);
+    gForceTypes.add(proj, gEarthGravity,true);
   else
-    gForceTypes.add(proj, gWeakGravity);
+    gForceTypes.add(proj, gWeakGravity, true);
 
-  gForceTypes.add(proj, gVortex);
+  gForceTypes.add(proj, gVortex, true);
 
   alternate = !alternate;
   projectiles.push_back(proj);
@@ -227,19 +234,26 @@ void keyPress(unsigned char key, const PxTransform& camera)
 {
   PX_UNUSED(camera);
 
-  switch (toupper(key)) {
+  switch (toupper(key)) 
+  {
+  case 'V':
+      gWindEnabled = !gWindEnabled;
+      gForceTypes.setActive(gWind,gWindEnabled);
+  case 'G':
+      gGravityEnabled = !gGravityEnabled;
+      gForceTypes.setActive(gEarthGravity, gGravityEnabled);
+      break;
+  case 'X':
+      gExplosionEnabled = !gExplosionEnabled;
+      gForceTypes.setActive(gExplosion, gExplosionEnabled);
+      break;
   case 'A':
       gAimingReticle->rotateLeft(RETICLEROT);
       break;
   case 'D':
       gAimingReticle->rotateRight(RETICLEROT);
       break;
-  case 'W':
-      gAimingReticle->rotateUp(RETICLEROT);
-      break;
-  case 'S':
-      gAimingReticle->rotateDown(RETICLEROT);
-      break;
+ 
     case 'P': {
       Shoot();
       break;

@@ -3,7 +3,7 @@
 #include "Particle.h"
 #include "Vector3D.h"
 #include <cmath>
-class Explosion : public ForceGenerator {
+class Explosion : public ForceType {
 public:
   Explosion(const Vector3& center_, float K_, float R_, float tau_)
     : center(center_)

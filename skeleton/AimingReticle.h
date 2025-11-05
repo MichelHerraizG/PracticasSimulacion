@@ -15,8 +15,6 @@ public:
 
 	void rotateLeft(float angle);
 	void rotateRight(float angle);
-	void rotateUp(float angle);
-	void rotateDown(float angle);
 
 	PxVec3 getAimDirection() const;
 
@@ -27,7 +25,7 @@ private:
 
 	float horizontalAngle;
 	float verticalAngle;
-	float rotationSpeed;
+	float rotationSpeed = 10.0f;
 
 	float aimDistance;
 	bool visible;

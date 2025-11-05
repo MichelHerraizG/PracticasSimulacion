@@ -2,7 +2,7 @@
 #include "core.hpp"
 #include "ForceGenerator.h"
 #include "Particle.h"
-class Gravity : public ForceGenerator {
+class Gravity : public ForceType {
 private:
   physx::PxVec3 gravity;
 

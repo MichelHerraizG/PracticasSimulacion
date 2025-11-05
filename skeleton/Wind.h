@@ -3,7 +3,7 @@
 #include "Particle.h"
 #include "ForceGenerator.h"
 
-class Wind : public ForceGenerator {
+class Wind : public ForceType {
   Vector3 windVelocity;  // Velocidad del viento
   float k1;              // Coeficiente de rozamiento lineal
   float k2;              // Coeficiente de rozamiento cuadrático (opcional)
