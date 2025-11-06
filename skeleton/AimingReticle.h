@@ -24,8 +24,7 @@ private:
 	void updateTransforms(const PxVec3& ballPosition);
 
 	float horizontalAngle;
-	float verticalAngle;
-	float rotationSpeed = 10.0f;
+	float rotationSpeed = 2.0f;
 
 	float aimDistance;
 	bool visible;

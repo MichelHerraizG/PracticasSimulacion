@@ -55,12 +55,13 @@ void SoccerBall::setBallType(BallType type)
     ballType = type;
 
     if (type == LIGHT_BALL) {
-        setMass(0.2f);
+
+        setMass(0.1f);
         damping = 0.95f;
         setScale(0.5f);
     }
     else {
-        setMass(0.43f);
+        setMass(0.89f);
         damping = 0.99f;
         setScale(1.0f);
     }

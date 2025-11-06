@@ -37,7 +37,7 @@ std::vector<Particle*> projectiles;
 ForceGenerador gForceTypes;
 
 Gravity* gEarthGravity = nullptr;
-Wind* gWind = nullptr;
+
 AimingReticle* gAimingReticle = nullptr;
 bool gWindEnabled = true;
 bool gGravityEnabled = true;
@@ -48,6 +48,33 @@ bool gExplosionTriggered = false;
 ParticleSystem* gExplosionParticleSystem = nullptr;
 Explosion* gExplosion;
 
+ParticleSystem* gWindParticleSystem = nullptr;
+Wind* gWind = nullptr;
+
+void CreateWindParticles() {
+    EmitterData windData;
+    windData.position = Vector3(0.0f,0.0f,0.0f);
+    windData.positionVar = Vector3(2.0f, 2.0f, 2.0f);
+    windData.emitRate = 25.0f;
+    windData.particleLife = 8.0f;
+    windData.particleRadius = 0.1f;
+    windData.color = Vector4(0.8f, 0.8f, 0.8f, 1.0f);
+    windData.damping = 0.8f;
+    windData.velDist = VelocityDistribution::UNIFORM;
+    windData.velMin = Vector3(-8.0f, 2.0f, -8.0f);
+    windData.velMax = Vector3(8.0f, 12.0f, 8.0f);
+
+    Particle* windModel = new Particle(
+        Vector3(30.0f, 2.5f, 0.0f),
+        Vector3(0, 0, 0),
+        0.1f,
+        windData.damping,
+        windData.particleRadius,
+        windData.color
+    );
+
+    gWindParticleSystem->addEmitter(windData, windModel);
+}
 void initPhysics(bool interactive)
 {
   PX_UNUSED(interactive);
@@ -76,6 +103,10 @@ void initPhysics(bool interactive)
   gExplosionParticleSystem = new ParticleSystem();
   gExplosion = new Explosion(Vector3(0, 0, 0), 50.0f, 10.0f, 1.0f); 
   gExplosionParticleSystem->addSystemForce(gExplosion, false);
+  gWindParticleSystem = new ParticleSystem();
+  gWind = new Wind(Vector3(-20, 0, 0));
+  gWindParticleSystem->addSystemForce(gWind, true);
+  CreateWindParticles();
   gSoccerBall = new SoccerBall(PxVec3(0, 1.0f, 0.0f),
                                PxVec3(30.0f, 0, 0),
                                0.43f,
@@ -88,7 +119,7 @@ void initPhysics(bool interactive)
   gAimingReticle = new AimingReticle(3.0f);
 
   gEarthGravity = new Gravity(PxVec3(0.0f, -9.8f, 0.0f));
-  gWind = new Wind(Vector3(-20, 0, 0));
+  
 
   if (gGravityEnabled)
     gSoccerBall->addForceType(gEarthGravity, true);
@@ -100,7 +131,7 @@ void Kick()
 {
   if (gSoccerBall && gAimingReticle) {
     Vector3 kickDir = Vector3(gAimingReticle->getAimDirection().x,
-                              0.3f,
+                              0.22f,
                               gAimingReticle->getAimDirection().z);
 
     gSoccerBall->setInPlay(true);
@@ -126,6 +157,15 @@ void ResetSoccerBall()
 {
   if (gSoccerBall) {
     gSoccerBall->reset();
+  }
+  gExplosionTimer = 0.0;
+  gExplosionTriggered = false;
+
+  if (gExplosionParticleSystem) 
+  {
+      delete gExplosionParticleSystem;
+      gExplosionParticleSystem = new ParticleSystem();
+      gExplosionParticleSystem->addSystemForce(gExplosion, false);
   }
 }
 
@@ -190,7 +230,9 @@ void stepPhysics(bool interactive, double t)
   if (gExplosionParticleSystem) {
       gExplosionParticleSystem->update(t);
   }
-
+  if (gWindParticleSystem) {
+      gWindParticleSystem->update(t);
+  }
   gScene->simulate(t);
   gScene->fetchResults(true);
 }
@@ -214,6 +256,15 @@ void Shoot()
 
   gForceTypes.add(proj, gEarthGravity, true);
   projectiles.push_back(proj);
+}
+void ToggleBallType()
+{
+    if (gSoccerBall) {
+        if (gSoccerBall->getBallType() == STANDARD_BALL)
+            gSoccerBall->setBallType(LIGHT_BALL);
+        else
+            gSoccerBall->setBallType(STANDARD_BALL);
+    }
 }
 
 void cleanupPhysics(bool interactive)
@@ -286,6 +337,9 @@ void keyPress(unsigned char key, const PxTransform& camera)
     case 'T':
       ToggleShotType();
       break;
+    case 'B':
+        ToggleBallType();
+        break;
     default:
       break;
   }

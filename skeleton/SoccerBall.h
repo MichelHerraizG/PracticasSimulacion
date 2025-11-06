@@ -12,7 +12,7 @@ private:
   Emitter* auraEmitter;
   bool auraActive;
   int auraIndex;
-
+  
 public:
   SoccerBall(const PxVec3& pos,
              const PxVec3& vel,
@@ -27,6 +27,7 @@ public:
   void launch(const PxVec3& direction, float power) override;
   void setBallType(BallType type);
   void reset() override;
+  BallType getBallType() const { return ballType; }
   void integrateForces(double dt) override;
   void setShotType(ShotType type);
   void updateAura();

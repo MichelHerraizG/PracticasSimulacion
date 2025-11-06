@@ -5,8 +5,7 @@ extern physx::PxPhysics* gPhysics;
 extern physx::PxMaterial* gMaterial;
 
 AimingReticle::AimingReticle(float distance)
-    : horizontalAngle(0.0f)
-    , verticalAngle(0.0f)
+    : horizontalAngle(PxPi)
     , aimDistance(distance)
     , visible(true)
 {
@@ -16,7 +15,6 @@ AimingReticle::AimingReticle(float distance)
 
     lineTransform = PxTransform(PxVec3(0, 0, 0));
     directionLine->transform = &lineTransform;
-    directionLine->transform->rotate(Vector3(180, 0, 0));
 }
 
 AimingReticle::~AimingReticle()
@@ -59,8 +57,8 @@ void AimingReticle::updateTransforms(const PxVec3& ballPosition)
 {
     PxVec3 aimDir = getAimDirection();
     PxVec3 lineCenter = ballPosition + aimDir * (aimDistance * 0.5f);
-
-    lineTransform = PxTransform(lineCenter, PxQuat(horizontalAngle,PxVec3(0,1,0)));
+    PxQuat rot(horizontalAngle, PxVec3(0, 1, 0));
+    lineTransform = PxTransform(lineCenter, rot);
 }
 
 void AimingReticle::setColor(const Vector4& color)
