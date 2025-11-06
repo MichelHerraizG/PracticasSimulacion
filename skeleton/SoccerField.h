@@ -8,6 +8,7 @@ private:
   std::vector<const RenderItem*> m_renderItems;
   PxVec3 goalPos;
   float scaleFactor;
+  std::vector<PxTransform*> m_transforms;
 
 public:
   SoccerField(float scaleFactor = 1.0f);

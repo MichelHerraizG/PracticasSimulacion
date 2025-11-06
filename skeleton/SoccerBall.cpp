@@ -19,18 +19,16 @@ SoccerBall::SoccerBall(const PxVec3& pos,
     scalePhysics(0.95f);
     if (parSys) {
         EmitterData cfg;
-        cfg.emitRate = 100.0f;
-        cfg.particleLife = 1.0f;
+        cfg.emitRate = 50.0f;
+        cfg.particleLife = 0.5f;
         cfg.positionVar = Vector3(0.3f, 0.2f, 0.3f);
         cfg.velDist = VelocityDistribution::GAUSSIAN;
         cfg.velMean = Vector3(0.0f, 4.0f, 0.0f);
-        cfg.velStdDev = Vector3(0.2f, 0.6f, 0.2f);
+        cfg.velEstDev = Vector3(0.2f, 0.6f, 0.2f);
 
         cfg.particleRadius = 0.08f;
         cfg.damping = 0.8f;
-        cfg.gravity = Vector3(0.0f, -4.0f, 0.0f);
-
-        // Color inicial rojo para POWER_SHOT
+        cfg.gravity = Vector3(0.0f, -2.0f, 0.0f);
         cfg.color = Vector4(1.0f, 0.2f, 0.1f, 0.8f);
 
         Particle* auraModel = new Particle(Vector3(pos.x, pos.y, pos.z),
@@ -40,7 +38,6 @@ SoccerBall::SoccerBall(const PxVec3& pos,
             cfg.particleRadius,
             cfg.color);
 
-        // El ParticleSystem devuelve el ID y gestiona el emitter
         auraIndex = parSys->addEmitter(cfg, auraModel);
         parSys->setEmitterActive(auraIndex, true);
     }

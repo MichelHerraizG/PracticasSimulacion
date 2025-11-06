@@ -9,45 +9,60 @@ SoccerField::SoccerField(float scale)
 {
   createField();
 }
+
 SoccerField::~SoccerField()
 {
+
+  for (auto t : m_transforms) {
+    delete t;
+  }
+  m_transforms.clear();
+
   for (auto item : m_renderItems) {
     DeregisterRenderItem(item);
     delete item;
   }
 }
+
 void SoccerField::createField()
 {
-  PxTransform groundTransform(PxVec3(0, -0.1f, 0));
+  // SUELO
+  PxTransform* groundTransform = new PxTransform(PxVec3(0, -0.1f, 0));
   PxBoxGeometry groundGeometry(30.0f, 0.1f, 40.0f);
   RenderItem* ground = new RenderItem(CreateShape(groundGeometry, gMaterial),
                                       Vector4(0.2f, 0.8f, 0.2f, 1.0f));
-  ground->transform = new PxTransform(groundTransform);
+  ground->transform = groundTransform;
   m_renderItems.push_back(ground);
-  PxTransform leftPostTransform(
-    goalPos + PxVec3(-3.66f*scaleFactor, 0, 0)); 
-  PxTransform rightPostTransform(goalPos + PxVec3(3.66f * scaleFactor, 0, 0));
-  PxTransform crossbarTransform(goalPos + PxVec3(0, 2.44f * scaleFactor, 0)); 
+  m_transforms.push_back(groundTransform); 
 
+  // POSTE IZQUIERDO
+  PxTransform* leftPostTransform =
+    new PxTransform(goalPos + PxVec3(-3.66f * scaleFactor, 0, 0));
   PxBoxGeometry postGeometry(
-    0.1f * scaleFactor, 2.5f * scaleFactor, 0.1f * scaleFactor);      
-  PxBoxGeometry crossbarGeometry(
-    3.8f * scaleFactor, 0.1f * scaleFactor, 0.1f * scaleFactor); 
-
-
-
+    0.1f * scaleFactor, 2.5f * scaleFactor, 0.1f * scaleFactor);
   RenderItem* leftPost =
     new RenderItem(CreateShape(postGeometry, gMaterial), Vector4(1, 1, 1, 1));
-  leftPost->transform = new PxTransform(leftPostTransform);
+  leftPost->transform = leftPostTransform;
   m_renderItems.push_back(leftPost);
+  m_transforms.push_back(leftPostTransform); 
 
+  // POSTE DERECHO
+  PxTransform* rightPostTransform =
+    new PxTransform(goalPos + PxVec3(3.66f * scaleFactor, 0, 0));
   RenderItem* rightPost =
     new RenderItem(CreateShape(postGeometry, gMaterial), Vector4(1, 1, 1, 1));
-  rightPost->transform = new PxTransform(rightPostTransform);
+  rightPost->transform = rightPostTransform;
   m_renderItems.push_back(rightPost);
+  m_transforms.push_back(rightPostTransform); 
 
+  // LARGUERO
+  PxTransform* crossbarTransform =
+    new PxTransform(goalPos + PxVec3(0, 2.44f * scaleFactor, 0));
+  PxBoxGeometry crossbarGeometry(
+    3.8f * scaleFactor, 0.1f * scaleFactor, 0.1f * scaleFactor);
   RenderItem* crossbar = new RenderItem(
     CreateShape(crossbarGeometry, gMaterial), Vector4(1, 1, 1, 1));
-  crossbar->transform = new PxTransform(crossbarTransform);
+  crossbar->transform = crossbarTransform;
   m_renderItems.push_back(crossbar);
+  m_transforms.push_back(crossbarTransform); 
 }

@@ -12,7 +12,8 @@ private:
   Emitter* auraEmitter;
   bool auraActive;
   int auraIndex;
-  
+
+
 public:
   SoccerBall(const PxVec3& pos,
              const PxVec3& vel,

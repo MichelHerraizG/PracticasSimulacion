@@ -19,6 +19,12 @@ public:
     active = true;
     elapsedTime = 0.0f;
   }
+
+  void triggerAtPosition(const Vector3& newCenter)
+  {
+    center = newCenter;
+    trigger();
+  }
   void deactivate() { active = false; }
   bool isActive() const { return active; }
   virtual void updateForce(Particle* particle, double t) override
@@ -26,7 +32,6 @@ public:
     if (!particle || particle->getInverseMass() == 0 || !active)
       return;
 
-    
     elapsedTime += t;
 
     if (elapsedTime >= 4.0f * tau) {
@@ -34,24 +39,23 @@ public:
       return;
     }
 
+
     Vector3 pos = particle->getPos();
 
     Vector3 diff = pos - center;
     float r = diff.magnitude();
 
-  
-    if (r >= R || r < 0.001f)  
+   if (r >= R)
       return;
 
+    if (r < 0.001f)
+      r = 0.001f;
 
     float expFactor = std::exp(-elapsedTime / tau);
 
-
     float forceMagnitude = (K / (r * r)) * expFactor;
 
- 
     Vector3 direction = diff / r;
-
 
     Vector3 force = direction * forceMagnitude;
 
@@ -59,10 +63,10 @@ public:
   }
 
 private:
-  Vector3 center;    
-  float K;         
-  float R;           
-  float tau;         
-  float elapsedTime;  
+  Vector3 center;
+  float K;
+  float R;
+  float tau;
+  float elapsedTime;
   bool active;
 };

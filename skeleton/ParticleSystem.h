@@ -21,7 +21,7 @@ struct EmitterData {
   Vector3 velMin = Vector3(-1, -1, -1);
   Vector3 velMax = Vector3(1, 1, 1);
   Vector3 velMean = Vector3(0, 0, 0);
-  Vector3 velStdDev = Vector3(1, 1, 1);
+  Vector3 velEstDev = Vector3(1, 1, 1);
 };
 
 class Emitter {

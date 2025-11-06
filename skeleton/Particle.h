@@ -80,6 +80,6 @@ public:
   float getRadius() const { return rad; }
   Vector4 getColor() const { return col; }
   ForceGenerador* getForceGenerator() { return forceGenerator; }
-
+  RenderItem* getRenderItem() { return renderItem; }
   void setVisible(bool visible);
 };

@@ -7,7 +7,7 @@ public:
              const PxVec3& vel,
              float mass = 0.057f,
              float damping = 0.96f,
-             float radius = 0.033f,
+             float radius = 0.2f,
              const Vector4& color = Vector4(0.9f, 1.0f, 0.4f, 1.0f))
     : Projectile(pos, vel, mass, damping, radius, color)
   {
