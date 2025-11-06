@@ -1,6 +1,6 @@
 #pragma once
 #include "core.hpp"
-#include "ForceGenerator.h"
+#include "ForceType.h"
 #include "Particle.h"
 class Gravity : public ForceType {
 private:

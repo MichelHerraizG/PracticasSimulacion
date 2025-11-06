@@ -1,76 +1,66 @@
-#include <ctype.h>
-
-#include <PxPhysicsAPI.h>
-
-#include <vector>
-
-#include "callbacks.hpp"
-#include "core.hpp"
+#include "AimingReticle.h"
 #include "Explosion.h"
 #include "ForceGenerador.h"
 #include "Gravity.h"
 #include "Particle.h"
 #include "ParticleSystem.h"
 #include "RenderUtils.hpp"
-#include "Vortex.h"
-#include "Wind.h"
 #include "SoccerBall.h"
 #include "SoccerField.h"
-#include "AimingReticle.h"
+#include "Wind.h"
+#include "callbacks.hpp"
+#include "core.hpp"
+#include <PxPhysicsAPI.h>
+#include <ctype.h>
 #include <iostream>
+#include <vector>
 
 std::string display_text =
-  "P: Shoot Projectile, K: Kick, R: Reset Ball, T: Toggle Shot Type";
-
+  "P: Shoot Projectile, K: Kick, R: Reset Ball, T: Toggle Shot Type\n"
+  "G: Toggle Gravity, W: Toggle Wind";
 using namespace physx;
 
 PxDefaultAllocator gAllocator;
 PxDefaultErrorCallback gErrorCallback;
 PxFoundation* gFoundation = NULL;
 PxPhysics* gPhysics = NULL;
-Particle* gTestParticle = nullptr;
 ParticleSystem* gParticleSystem = nullptr;
 PxMaterial* gMaterial = NULL;
 SoccerBall* gSoccerBall = nullptr;
 SoccerField* gSoccerField = nullptr;
 PxPvd* gPvd = NULL;
-SoccerBall::ShotType gCurrentShotType = SoccerBall::POWER_SHOT;
+ShotType gCurrentShotType = POWER_SHOT;
 PxDefaultCpuDispatcher* gDispatcher = NULL;
 PxScene* gScene = NULL;
 ContactReportCallback gContactReportCallback;
 std::vector<Particle*> projectiles;
 ForceGenerador gForceTypes;
 
-// FUERZAS
 Gravity* gEarthGravity = nullptr;
-Gravity* gWeakGravity = nullptr;
 Wind* gWind = nullptr;
-Vortex* gVortex = nullptr;
-Explosion* gExplosion = nullptr;
 AimingReticle* gAimingReticle = nullptr;
 bool gWindEnabled = true;
 bool gGravityEnabled = true;
-bool gExplosionEnabled = false;
 const float RETICLEROT = 0.02f;
-// Initialize physics engine
+float gExplosionTimer = 0.0f;
+bool gExplosionScheduled = false;
+Explosion* gExplosion = nullptr;
+
 void initPhysics(bool interactive)
 {
   PX_UNUSED(interactive);
 
   gFoundation =
     PxCreateFoundation(PX_FOUNDATION_VERSION, gAllocator, gErrorCallback);
-
   gPvd = PxCreatePvd(*gFoundation);
   PxPvdTransport* transport =
     PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
   gPvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
-
   gPhysics = PxCreatePhysics(
     PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
 
-  // REBOTE
   gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.8f);
-  // For Solid Rigids +++++++++++++++++++++++++++++++++++++
+
   PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.0f, -9.8f, 0.0f);
   gDispatcher = PxDefaultCpuDispatcherCreate(2);
@@ -79,66 +69,70 @@ void initPhysics(bool interactive)
   sceneDesc.simulationEventCallback = &gContactReportCallback;
   gScene = gPhysics->createScene(sceneDesc);
 
-
-  // SISTEMA DE PARTÍCULAS
   gParticleSystem = new ParticleSystem();
   gSoccerField = new SoccerField(2.0f);
-  gSoccerBall = new SoccerBall(PxVec3(0, 0.5f, 0.0f),  
-    PxVec3(0, 0, 0),   
-    0.43f,            
-    0.99f,             
-    0.60f,  
-    Vector4(1, 1, 1, 1)  
-  );
-  // RETÍCULA
+
+  gSoccerBall = new SoccerBall(PxVec3(0, 1.0f, 0.0f),
+                               PxVec3(30.0f, 0, 0),
+                               0.43f,
+                               0.99f,
+                               0.60f,
+                               Vector4(1, 1, 1, 1),
+                               STANDARD_BALL,
+                               gParticleSystem);
+
   gAimingReticle = new AimingReticle(3.0f);
-  // FUERZAS
+
   gEarthGravity = new Gravity(PxVec3(0.0f, -9.8f, 0.0f));
   gWind = new Wind(Vector3(-20, 0, 0));
-  //gWeakGravity = new Gravity(PxVec3(0.0f, -3.0f, 0.0f));
-  //gVortex = new Vortex(Vector3(0.0f, 0.0f, 0.0f), 40.0f, 50.0f);
-  gExplosion = new Explosion(Vector3(0.0f, 0.0f, 0.0f), 3000.0f, 30.0f, 1.0f);
-  gForceTypes.add(gSoccerBall, gEarthGravity, gGravityEnabled);
-  gForceTypes.add(gSoccerBall, gWind, gWindEnabled);
-  gForceTypes.add(gSoccerBall, gExplosion,gExplosionEnabled);
+
+  if (gGravityEnabled)
+    gSoccerBall->addForceType(gEarthGravity, true);
+  if (gWindEnabled)
+    gSoccerBall->addForceType(gWind, true);
 }
 
 void Kick()
 {
-    if (gSoccerBall && gAimingReticle) 
-    {
-        Vector3 kickdir =  Vector3(gAimingReticle->getAimDirection().x,1.0f, gAimingReticle->getAimDirection().z);
+  if (gSoccerBall && gAimingReticle) {
+    Vector3 kickDir = Vector3(gAimingReticle->getAimDirection().x,
+                              0.3f,
+                              gAimingReticle->getAimDirection().z);
 
-        gSoccerBall->setShotType(gCurrentShotType);
-        gSoccerBall->SetInPlay(true);
-        gSoccerBall->kick(kickdir, 2.0f);
-    }
+    gSoccerBall->setInPlay(true);
+    gSoccerBall->setShotType(gCurrentShotType);
+    gSoccerBall->launch(PxVec3(kickDir.x, kickDir.y, kickDir.z), 2.0f);
+    gExplosionTimer = 0.0f;
+    gExplosionScheduled = false;
+  }
 }
+
 void ToggleShotType()
 {
-    gCurrentShotType = (gCurrentShotType == SoccerBall::POWER_SHOT) ?
-        SoccerBall::PRECISION_SHOT :
-        SoccerBall::POWER_SHOT;
+  gCurrentShotType =
+    (gCurrentShotType == POWER_SHOT) ? PRECISION_SHOT : POWER_SHOT;
 
-    if (gAimingReticle) {
-        if (gCurrentShotType == SoccerBall::POWER_SHOT) 
-        {
-            gAimingReticle->setColor(Vector4(1.0f, 0.0f, 0.0f, 1.0f));
-        }
-        else {
-            gAimingReticle->setColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
-        }
-    }
+  if (gAimingReticle) {
+    if (gCurrentShotType == POWER_SHOT)
+      gAimingReticle->setColor(Vector4(1.0f, 0.0f, 0.0f, 1.0f));
+    else
+      gAimingReticle->setColor(Vector4(0.0f, 0.0f, 1.0f, 1.0f));
+  }
 }
+
 void ResetSoccerBall()
 {
   if (gSoccerBall) {
     gSoccerBall->reset();
+    gExplosionTimer = 0.0f;
+    gExplosionScheduled = false;
   }
 }
-  // Function to configure what happens in each step of physics
-// interactive: true if the game is rendering, false if it offline
-// t: time passed since last call in milliseconds
+
+void TriggerBallExplosion()
+{
+
+}
 void stepPhysics(bool interactive, double t)
 {
   PX_UNUSED(interactive);
@@ -146,20 +140,30 @@ void stepPhysics(bool interactive, double t)
 
   if (gSoccerBall) {
     gSoccerBall->integrateForces(t);
+    if (gSoccerBall->isInPlay() && !gExplosionScheduled) {
+      gExplosionTimer += t;
+      if (gExplosionTimer >= 3.0f) {
+        TriggerBallExplosion();
+        gExplosionScheduled = true;
+      }
+    }
   }
 
   for (auto proj : projectiles) {
     proj->integrateForces(t);
   }
+
   if (gAimingReticle && gSoccerBall && !gSoccerBall->isInPlay()) {
-      gAimingReticle->update(gSoccerBall->getPos());
+    gAimingReticle->update(gSoccerBall->getPos());
   }
+
   if (gParticleSystem)
     gParticleSystem->update(t);
 
   gScene->simulate(t);
   gScene->fetchResults(true);
-}  
+}
+
 void Shoot()
 {
   Vector3 shootPos = GetCamera()->getEye();
@@ -167,7 +171,7 @@ void Shoot()
   shootDir.normalize();
   float speed = 60.0f;
   float mass = 5.0f;
-  float desiredSpeed = 50.0f;
+
   Particle* proj = new Particle(
     shootPos,
     PxVec3(speed * shootDir.x, speed * shootDir.y, speed * shootDir.z),
@@ -175,31 +179,22 @@ void Shoot()
     0.99f,
     0.4f,
     Vector4(1.0f, 1.0f, 1.0f, 1.0f));
-  static bool alternate = false;
-  if (alternate)
-    gForceTypes.add(proj, gEarthGravity,true);
-  else
-    gForceTypes.add(proj, gWeakGravity, true);
 
-  gForceTypes.add(proj, gVortex, true);
-
-  alternate = !alternate;
+  gForceTypes.add(proj, gEarthGravity, true);
   projectiles.push_back(proj);
 }
-// Function to clean data
-// Add custom code to the begining of the function
+
 void cleanupPhysics(bool interactive)
 {
   PX_UNUSED(interactive);
 
-  // Rigid Body ++++++++++++++++++++++++++++++++++++++++++
   gScene->release();
   gDispatcher->release();
-  // -----------------------------------------------------
   gPhysics->release();
   PxPvdTransport* transport = gPvd->getTransport();
   gPvd->release();
   transport->release();
+
   if (gParticleSystem) {
     delete gParticleSystem;
     gParticleSystem = nullptr;
@@ -218,64 +213,45 @@ void cleanupPhysics(bool interactive)
   }
   if (gEarthGravity)
     delete gEarthGravity;
-  if (gWeakGravity)
-    delete gWeakGravity;
-  if (gVortex)
-    delete gVortex;
-  if (gExplosion) {
+  if (gWind)
+    delete gWind;
+  if (gExplosion)
     delete gExplosion;
-    gExplosion = nullptr;
-  }
+
   gFoundation->release();
 }
 
-// Function called when a key is pressed
 void keyPress(unsigned char key, const PxTransform& camera)
 {
   PX_UNUSED(camera);
 
-  switch (toupper(key)) 
-  {
-  case 'V':
+  switch (toupper(key)) {
+    case 'V':
       gWindEnabled = !gWindEnabled;
-      gForceTypes.setActive(gWind,gWindEnabled);
-  case 'G':
+      gForceTypes.setActive(gWind, gWindEnabled);
+      break;
+    case 'G':
       gGravityEnabled = !gGravityEnabled;
       gForceTypes.setActive(gEarthGravity, gGravityEnabled);
       break;
-  case 'X':
-      gExplosionEnabled = !gExplosionEnabled;
-      gForceTypes.setActive(gExplosion, gExplosionEnabled);
-      break;
-  case 'A':
+    case 'A':
       gAimingReticle->rotateLeft(RETICLEROT);
       break;
-  case 'D':
+    case 'D':
       gAimingReticle->rotateRight(RETICLEROT);
       break;
- 
-    case 'P': {
+    case 'P':
       Shoot();
       break;
-    }
-    case 'K': {
+    case 'K':
       Kick();
       break;
-    }
-    case 'R': {
+    case 'R':
       ResetSoccerBall();
       break;
-    }
-    case 'T': {  
+    case 'T':
       ToggleShotType();
       break;
-    }
-    case 'E': {
-      if (gExplosion) {
-        gExplosion->trigger();
-      }
-      break;
-    }
     default:
       break;
   }

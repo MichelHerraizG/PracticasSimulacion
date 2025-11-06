@@ -1,5 +1,5 @@
 #pragma once
-#include "ForceGenerator.h"
+#include "ForceType.h"
 #include "Particle.h"
 #include "Vector3D.h"
 #include <cmath>

@@ -1,7 +1,7 @@
 #pragma once
 #include "core.hpp"
 #include "Particle.h"
-#include "ForceGenerator.h"
+#include "ForceType.h"
 
 class Wind : public ForceType {
   Vector3 windVelocity;  // Velocidad del viento
@@ -20,7 +20,7 @@ public:
       return;
 
     // Diferencia de velocidad (v_v - v)
-    Vector3 diff = windVelocity - particle->getVelocity();
+    Vector3 diff = windVelocity - particle->getVel();
 
     // Magnitud del flujo relativo
     float speed = diff.magnitude();

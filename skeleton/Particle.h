@@ -1,83 +1,77 @@
 #pragma once
-#include "PxPhysicsAPI.h"
 #include "RenderUtils.hpp"
-#include "Vector3D.h"
-
+#include "core.hpp"
 using namespace physx;
 
+class ForceGenerador;
+class ForceType;
 
 class Particle {
+protected:
+  Vector3 velocity;
+  Vector3 position;
+  Vector3 gravity;
+  float damping;
+  float inverseMass = 0.0f;
+  float mass = 1.0f;
+  float rad;
+  physx::PxTransform transform;
+  RenderItem* renderItem;
+  Vector3 forceAccumulator;
+  Vector4 col;
+  Vector3 prePosition;
+  int stepNumber = 0;
+  ForceGenerador* forceGenerator;
+
 public:
-  // Constructor básico 
-  Particle(const Vector3& pos,
-           const Vector3& vel = Vector3(0.0f),
-           const Vector3& acc = Vector3(0.0f, -9.8f, 0.0f),
-           float damping_ = 0.99f,
-           float radius = 1.0f,
-           const Vector4& color = Vector4(1.0f, 0.0f, 0.0f, 1.0f));
-
-  // Constructor proyectiles
-  Particle(const Vector3& pos,
-           const Vector3& velR = Vector3(0.0f),
-           const Vector3& velSim = Vector3(0.0f),
-           const Vector3& accR = Vector3(0.0f, -9.8f, 0.0f),
-           float massR = 0.0f,
-           float damping_ = 0.99f,
-           float radius = 1.0f,
-           const Vector4& color = Vector4(1.0f, 0.0f, 0.0f, 1.0f));
-
-  // Constructor fuerzas
   Particle(const physx::PxVec3& pos,
            const physx::PxVec3& vel,
-           float mass_,
+           const physx::PxVec3& acc,
            float damping_,
            float radius,
            const Vector4& color);
 
-  ~Particle();
+  Particle(const physx::PxVec3& pos,
+           const physx::PxVec3& velR,
+           const physx::PxVec3& velSim,
+           const physx::PxVec3& accR,
+           float massR,
+           float damping_,
+           float radius,
+           const Vector4& color);
 
+  Particle(const physx::PxVec3& pos,
+           const physx::PxVec3& vel,
+           float mass,
+           float damping_,
+           float radius,
+           const Vector4& color);
 
-  // Setters
+  virtual ~Particle();
 
-  void changeAcceleration(Vector3 newAcceleration);
-
-
-  // Integración 
+  virtual void integrateForces(double dt);
   void intergrateEulerExplicit(double dt);
   void intergrateEulerSemiExplicit(double dt);
   void intergrateVerlet(double dt);
-  virtual void integrateForces(double dt);
-
-
-
-  // Métodos
-
-  Vector3 getPos() { return position; }
   void addForce(const physx::PxVec3& force);
   void clearForceAccumulator();
+  void changeAcceleration(Vector3 newAcceleration);
+  void setScale(float scale);
+  ForceGenerador* getForceGenerator() { return forceGenerator; }
+  void addForceType(ForceType* fg, bool active = true);
+  void removeForceType(ForceType* fg);
 
+  Vector3 getPos() const { return position; }
+  Vector3 getVel() const { return velocity; }
   float getMass() const { return mass; }
   float getInverseMass() const { return inverseMass; }
-  Vector3 getVelocity() const { return velocity; }
+  float getDamping() const { return damping; }
+  float getRadius() const { return rad; }
+  Vector4 getColor() const { return col; }
 
-protected:
-
-  // Atributos físicos
-
-  Vector3 position;
-  Vector3 velocity;
-  Vector3 prePosition;
-  Vector3 gravity;
-  PxVec3 forceAccumulator;
-  float stepNumber;
-  float damping;
-  float mass;
-  float inverseMass;
-
-
-  // Estado
-
-  PxTransform transform;
-  RenderItem* renderItem;
-  float timeRemaining;
+  void setPos(const physx::PxVec3& newPos)
+  {
+    position = newPos;
+    transform = physx::PxTransform(position);
+  }
 };

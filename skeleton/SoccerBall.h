@@ -1,33 +1,33 @@
 #pragma once
-#include "Particle.h"
+#include "Projectile.h"
 #include "ParticleSystem.h"
-
-class SoccerBall : public Particle {
-public:
-  enum ShotType { POWER_SHOT, PRECISION_SHOT };
-
+enum BallType { LIGHT_BALL, STANDARD_BALL };
+enum ShotType { POWER_SHOT, PRECISION_SHOT };
+using namespace physx;
+class SoccerBall : public Projectile {
 private:
-  bool inPlay;
-  PxVec3 initialPos;
+  BallType ballType;
   ShotType currentShotType;
-  ParticleSystem* trailParticles;
+  ParticleSystem* globalSystem;
+  Emitter* auraEmitter;
+  bool auraActive;
 
 public:
   SoccerBall(const PxVec3& pos,
              const PxVec3& vel,
-             float mass,
-             float damping,
-             float radius,
-             const Vector4& color);
+             float mass = 0.43f,
+             float damping = 0.99f,
+             float radius = 0.11f,
+             const Vector4& color = Vector4(1.0f, 1.0f, 1.0f, 1.0f),
+             BallType type = STANDARD_BALL,
+             ParticleSystem* system = nullptr);
 
-  ~SoccerBall(); 
-
-  void kick(const PxVec3& direction, float power);
-  void reset();
+ ~SoccerBall();
+  void launch(const PxVec3& direction, float power) override;
+  void setBallType(BallType type);
+  void reset() override;
   void integrateForces(double dt) override;
-  void setShotType(ShotType type) { currentShotType = type; }
-  void SetInPlay(bool play) { inPlay = play; }  
-  bool isInPlay() const { return inPlay; }
+  void setShotType(ShotType type);
+  void updateAura();
 
-  ParticleSystem* getTrailParticles() { return trailParticles; }
 };

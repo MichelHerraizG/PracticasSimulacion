@@ -1,8 +1,8 @@
 #pragma once
-#include "ForceGenerator.h"
-#include "Particle.h"
+#include "ForceType.h"
 #include <vector>
-
+class Particle;
+class ForceType;
 class ForceGenerador {
 private:
   struct ForceEntry {
@@ -16,7 +16,7 @@ private:
 public:
   void add(Particle* particle, ForceType* fg, bool act)
   {
-    registrations.push_back({ particle, fg , act});
+    registrations.push_back({ particle, fg, act });
   }
 
   void remove(Particle* particle, ForceType* fg)
@@ -33,18 +33,17 @@ public:
   void clear() { registrations.clear(); }
   void setActive(ForceType* fg, bool act)
   {
-      for (auto& r : registrations) {
-          if (r.fg == fg) 
-          {
-              r.active = act;
-          }
+    for (auto& r : registrations) {
+      if (r.fg == fg) {
+        r.active = act;
       }
+    }
   }
   void updateForces(double dt)
   {
     for (auto& r : registrations) {
-        if(r.active)
-      r.fg->updateForce(r.particle, dt);
+      if (r.active)
+        r.fg->updateForce(r.particle, dt);
     }
   }
 };

@@ -1,5 +1,6 @@
-#include "core.hpp"
+#include "ForceGenerador.h"
 #include "Particle.h"
+#include "core.hpp"
 #include "RenderUtils.hpp"
 #include <cmath>
 extern physx::PxPhysics* gPhysics;
@@ -16,9 +17,12 @@ Particle::Particle(const PxVec3& pos,
   , velocity(vel)
   , gravity(acc)
   , damping(damping_)
+  , rad(radius)
   , transform(PxTransform(pos))
   , renderItem(nullptr)
+  , col(color)
 {
+  forceGenerator = new ForceGenerador();
   PxSphereGeometry sphere(radius);
   renderItem = new RenderItem(CreateShape(sphere, gMaterial), color);
   renderItem->transform = &transform;
@@ -34,19 +38,27 @@ Particle::Particle(const PxVec3& pos,
                    float radius,
                    const Vector4& color)
   : position(pos)
-  , damping(damping_)
   , velocity(velSim)
+  , gravity(accR)    
+  , damping(damping_)
+  , rad(radius)
+  , mass(massR)  
   , transform(PxTransform(pos))
   , renderItem(nullptr)
+  , forceAccumulator(PxVec3(0.0f))
+  , col(color)
 {
+
+  if (massR > 0.0f)
+    inverseMass = 1.0f / massR;
+  else
+    inverseMass = 0.0f;
+  forceGenerator = new ForceGenerador();
   PxSphereGeometry sphere(radius);
   renderItem = new RenderItem(CreateShape(sphere, gMaterial), color);
   renderItem->transform = &transform;
   prePosition = pos;
-  mass = (massR * velR.magnitude() * velR.magnitude()) /
-         (velocity.magnitude() * velocity.magnitude());
-  gravity = (accR * velR.magnitude() * velR.magnitude()) /
-            (velocity.magnitude() * velocity.magnitude());
+
 }
 Particle::Particle(const PxVec3& pos,
                    const PxVec3& vel,
@@ -56,12 +68,14 @@ Particle::Particle(const PxVec3& pos,
                    const Vector4& color)
   : position(pos)
   , velocity(vel)
+  , rad(radius)
   , mass(mass_)
   , damping(damping_)
   , transform(PxTransform(pos))
   , renderItem(nullptr)
   , forceAccumulator(PxVec3(0.0f))
   , gravity(PxVec3(0.0f))
+  , col(color)
 {
 
   if (mass_ > 0.0f)
@@ -73,39 +87,45 @@ Particle::Particle(const PxVec3& pos,
   renderItem = new RenderItem(CreateShape(sphere, gMaterial), color);
   renderItem->transform = &transform;
   prePosition = pos;
+  forceGenerator = new ForceGenerador();
 }
 Particle::~Particle()
 {
   if (renderItem != nullptr) {
     DeregisterRenderItem(renderItem);
     delete renderItem;
-    renderItem = nullptr;
   }
+  delete forceGenerator;
 }
 void Particle::addForce(const PxVec3& force)
 {
   forceAccumulator += force;
 }
-
+void Particle::setScale(float scale)
+{
+  rad *= scale;
+  if (renderItem != nullptr) {
+    DeregisterRenderItem(renderItem);
+    delete renderItem;
+    renderItem = nullptr;
+  }
+  PxSphereGeometry sphere(rad);
+  renderItem = new RenderItem(CreateShape(sphere, gMaterial), col);
+  renderItem->transform = &transform;
+}
 void Particle::integrateForces(double dt)
 {
   if (inverseMass <= 0.0f)
-    return;  
+    return;
 
-  
+
+  forceGenerator->updateForces(dt);
+
   PxVec3 acceleration = forceAccumulator * inverseMass;
-
-
   velocity += acceleration * dt;
   position += velocity * dt;
-
- 
   velocity *= pow(damping, dt);
-
-
   transform = PxTransform(position);
-
-  
   clearForceAccumulator();
 }
 
@@ -149,4 +169,16 @@ void Particle::intergrateVerlet(double dt)
     transform = PxTransform(position);
   }
   stepNumber++;
+}
+
+void Particle::addForceType(ForceType* fg, bool active)
+{
+  if (forceGenerator)
+    forceGenerator->add(this, fg, active);
+}
+
+void Particle::removeForceType(ForceType* fg)
+{
+  if (forceGenerator)
+    forceGenerator->remove(this, fg);
 }

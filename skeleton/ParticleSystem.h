@@ -1,5 +1,6 @@
 // ParticleSystem.h
 #pragma once
+#include "ForceGenerador.h"
 #include "Particle.h"
 #include <random>
 #include <vector>
@@ -26,18 +27,34 @@ struct EmitterData {
 class Emitter {
 private:
   EmitterData data;
+  Particle* model;
   double emitAccumulator;
   std::mt19937 rng;
+  bool active;
 
 public:
-  Emitter(const EmitterData& data_);
+  Emitter(const EmitterData& data_, Particle* model_);
   void update(double dt, std::vector<Particle*>& particles);
-
-
-  void setPosition(const Vector3& newPos) { data.position = newPos; }
   const EmitterData& getData() const { return data; }
-  EmitterData& getData() { return data; }
+
+ 
+  void updateData(const EmitterData& newData) { data = newData; }
+  void setPosition(const Vector3& pos)
+  {
+    if (model) {
+      model->setPos(pos);
+    }
+  }
+  void setActive(bool act) { active = act; }
+  bool isActive() const { return active; }
 };
+
+
+struct SystemForce {
+  ForceType* force;
+  bool active;
+};
+
 
 struct ParticleInstance {
   Particle* p = nullptr;
@@ -46,20 +63,24 @@ struct ParticleInstance {
 
 class ParticleSystem {
 private:
+  std::vector<SystemForce> systemForces;
   std::vector<ParticleInstance> particles;
   std::vector<Emitter> emitters;
   float removeBelowY = -100.0f;
   float removeFarDistance = 1000.0f;
+  ForceGenerador forceGenerador;
+  void regParticleSysForce(Particle* particle);
 
 public:
   ParticleSystem();
   ~ParticleSystem();
 
-  void addEmitter(const EmitterData& cfg);
+  void addEmitter(const EmitterData& cfg, Particle* model);
   void spawnParticle(Particle* p, float lifetime);
   void update(double dt);
-
+  void addSystemForce(ForceType* force, bool active = true);
+  void removeSystemForce(ForceType* force);
+  void setSystemForceActive(ForceType* force, bool active);
   void clearEmitters() { emitters.clear(); }
   std::vector<Emitter>& getEmitters() { return emitters; }
-  const std::vector<Emitter>& getEmitters() const { return emitters; }
 };
