@@ -68,7 +68,7 @@ public:
   float getDamping() const { return damping; }
   float getRadius() const { return rad; }
   Vector4 getColor() const { return col; }
-
+  void setForceActive(ForceType* fg, bool active);
   void setPos(const physx::PxVec3& newPos)
   {
     position = newPos;

@@ -270,6 +270,7 @@
     <ClInclude Include="callbacks.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="Explosion.h" />
+    <ClInclude Include="ForceGenerador.h" />
     <ClInclude Include="ForceType.h" />
     <ClInclude Include="Gravity.h" />
     <ClInclude Include="Particle.h" />

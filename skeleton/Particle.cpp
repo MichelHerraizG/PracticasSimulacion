@@ -182,3 +182,9 @@ void Particle::removeForceType(ForceType* fg)
   if (forceGenerator)
     forceGenerator->remove(this, fg);
 }
+
+void Particle::setForceActive(ForceType* fg, bool active)
+{
+    if (forceGenerator)
+        forceGenerator->setActive(fg, active);
+}

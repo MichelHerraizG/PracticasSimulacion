@@ -39,6 +39,7 @@
     <ClInclude Include="AimingReticle.h" />
     <ClInclude Include="Projectile.h" />
     <ClInclude Include="ForceType.h" />
+    <ClInclude Include="ForceGenerador.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Render">

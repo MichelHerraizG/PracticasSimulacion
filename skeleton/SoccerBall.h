@@ -8,9 +8,10 @@ class SoccerBall : public Projectile {
 private:
   BallType ballType;
   ShotType currentShotType;
-  ParticleSystem* globalSystem;
+  ParticleSystem* parSys;
   Emitter* auraEmitter;
   bool auraActive;
+  int auraIndex;
 
 public:
   SoccerBall(const PxVec3& pos,

@@ -24,7 +24,7 @@ PxDefaultAllocator gAllocator;
 PxDefaultErrorCallback gErrorCallback;
 PxFoundation* gFoundation = NULL;
 PxPhysics* gPhysics = NULL;
-ParticleSystem* gParticleSystem = nullptr;
+ParticleSystem* gBallParticleSystem = nullptr;
 PxMaterial* gMaterial = NULL;
 SoccerBall* gSoccerBall = nullptr;
 SoccerField* gSoccerField = nullptr;
@@ -42,9 +42,11 @@ AimingReticle* gAimingReticle = nullptr;
 bool gWindEnabled = true;
 bool gGravityEnabled = true;
 const float RETICLEROT = 0.02f;
-float gExplosionTimer = 0.0f;
-bool gExplosionScheduled = false;
-Explosion* gExplosion = nullptr;
+
+double gExplosionTimer = 0.0;
+bool gExplosionTriggered = false;
+ParticleSystem* gExplosionParticleSystem = nullptr;
+Explosion* gExplosion;
 
 void initPhysics(bool interactive)
 {
@@ -69,9 +71,11 @@ void initPhysics(bool interactive)
   sceneDesc.simulationEventCallback = &gContactReportCallback;
   gScene = gPhysics->createScene(sceneDesc);
 
-  gParticleSystem = new ParticleSystem();
+  gBallParticleSystem = new ParticleSystem();
   gSoccerField = new SoccerField(2.0f);
-
+  gExplosionParticleSystem = new ParticleSystem();
+  gExplosion = new Explosion(Vector3(0, 0, 0), 50.0f, 10.0f, 1.0f); 
+  gExplosionParticleSystem->addSystemForce(gExplosion, false);
   gSoccerBall = new SoccerBall(PxVec3(0, 1.0f, 0.0f),
                                PxVec3(30.0f, 0, 0),
                                0.43f,
@@ -79,7 +83,7 @@ void initPhysics(bool interactive)
                                0.60f,
                                Vector4(1, 1, 1, 1),
                                STANDARD_BALL,
-                               gParticleSystem);
+                               gBallParticleSystem);
 
   gAimingReticle = new AimingReticle(3.0f);
 
@@ -102,8 +106,6 @@ void Kick()
     gSoccerBall->setInPlay(true);
     gSoccerBall->setShotType(gCurrentShotType);
     gSoccerBall->launch(PxVec3(kickDir.x, kickDir.y, kickDir.z), 2.0f);
-    gExplosionTimer = 0.0f;
-    gExplosionScheduled = false;
   }
 }
 
@@ -124,15 +126,35 @@ void ResetSoccerBall()
 {
   if (gSoccerBall) {
     gSoccerBall->reset();
-    gExplosionTimer = 0.0f;
-    gExplosionScheduled = false;
   }
 }
 
-void TriggerBallExplosion()
-{
+void CreateExplosionParticles() {
+    EmitterData explosionData;
+    explosionData.position = Vector3(0, 2.5f, -35.0f);
+    explosionData.positionVar = Vector3(2.0f, 2.0f, 2.0f);
+    explosionData.emitRate = 200.0f;
+    explosionData.particleLife = 1.5f;
+    explosionData.particleRadius = 0.5f;
+    explosionData.color = Vector4(1.0f, 0.5f, 0.0f, 1.0f);
+    explosionData.damping = 0.8f;
+    explosionData.velDist = VelocityDistribution::UNIFORM;
+    explosionData.velMin = Vector3(-8.0f, 2.0f, -8.0f);
+    explosionData.velMax = Vector3(8.0f, 12.0f, 8.0f);
 
+    Particle* explosionModel = new Particle(
+        Vector3(0, 2.5f, -35.0f),
+        Vector3(0, 0, 0),
+        0.1f,
+        explosionData.damping,
+        explosionData.particleRadius,
+        explosionData.color
+    );
+
+    gExplosionParticleSystem->addEmitter(explosionData, explosionModel);
+    gExplosionParticleSystem->setSystemForceActive(gExplosion, true);
 }
+
 void stepPhysics(bool interactive, double t)
 {
   PX_UNUSED(interactive);
@@ -140,13 +162,7 @@ void stepPhysics(bool interactive, double t)
 
   if (gSoccerBall) {
     gSoccerBall->integrateForces(t);
-    if (gSoccerBall->isInPlay() && !gExplosionScheduled) {
-      gExplosionTimer += t;
-      if (gExplosionTimer >= 3.0f) {
-        TriggerBallExplosion();
-        gExplosionScheduled = true;
-      }
-    }
+
   }
 
   for (auto proj : projectiles) {
@@ -157,12 +173,28 @@ void stepPhysics(bool interactive, double t)
     gAimingReticle->update(gSoccerBall->getPos());
   }
 
-  if (gParticleSystem)
-    gParticleSystem->update(t);
+  if (gBallParticleSystem)
+    gBallParticleSystem->update(t);
+  if (gSoccerBall && gSoccerBall->isInPlay()) {
+      gExplosionTimer += t;
+
+    
+      if (gExplosionTimer >= 3.0 && !gExplosionTriggered) {
+          gExplosionTriggered = true;
+
+          gExplosion->trigger();
+          CreateExplosionParticles();
+      }
+  }
+
+  if (gExplosionParticleSystem) {
+      gExplosionParticleSystem->update(t);
+  }
 
   gScene->simulate(t);
   gScene->fetchResults(true);
 }
+
 
 void Shoot()
 {
@@ -195,9 +227,9 @@ void cleanupPhysics(bool interactive)
   gPvd->release();
   transport->release();
 
-  if (gParticleSystem) {
-    delete gParticleSystem;
-    gParticleSystem = nullptr;
+  if (gBallParticleSystem) {
+    delete gBallParticleSystem;
+    gBallParticleSystem = nullptr;
   }
   if (gSoccerField) {
     delete gSoccerField;
@@ -226,13 +258,15 @@ void keyPress(unsigned char key, const PxTransform& camera)
   PX_UNUSED(camera);
 
   switch (toupper(key)) {
-    case 'V':
+  case 'V':
       gWindEnabled = !gWindEnabled;
-      gForceTypes.setActive(gWind, gWindEnabled);
+      if (gSoccerBall)
+          gSoccerBall->setForceActive(gWind, gWindEnabled);
       break;
     case 'G':
       gGravityEnabled = !gGravityEnabled;
-      gForceTypes.setActive(gEarthGravity, gGravityEnabled);
+      if (gSoccerBall)
+          gSoccerBall->setForceActive(gEarthGravity, gGravityEnabled);
       break;
     case 'A':
       gAimingReticle->rotateLeft(RETICLEROT);

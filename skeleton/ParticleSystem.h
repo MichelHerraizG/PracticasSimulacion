@@ -26,31 +26,33 @@ struct EmitterData {
 
 class Emitter {
 private:
-  EmitterData data;
-  Particle* model;
-  double emitAccumulator;
-  std::mt19937 rng;
-  bool active;
+    EmitterData data;
+    Particle* model;
+    double emitAccumulator;
+    std::mt19937 rng;
+    bool active;
+    int id;
 
 public:
-  Emitter(const EmitterData& data_, Particle* model_);
-  void update(double dt, std::vector<Particle*>& particles);
-  const EmitterData& getData() const { return data; }
+    Emitter(const EmitterData& data_, Particle* model_, int id_);
+    void update(double dt, std::vector<Particle*>& particles);
+    const EmitterData& getData() const { return data; }
+    int getId() const { return id; }
 
- 
-  void updateData(const EmitterData& newData) { data = newData; }
-  void setPosition(const Vector3& pos)
-  {
-    if (model) {
-      model->setPos(pos);
+    void updateData(const EmitterData& newData) { data = newData; }
+    void setPosition(const Vector3& pos)
+    {
+        if (model) {
+            model->setPos(pos);
+        }
     }
-  }
-  void setActive(bool act) { active = act; }
-  bool isActive() const { return active; }
+    void setActive(bool act) { active = act; }
+    bool isActive() const { return active; }
 };
 
 
-struct SystemForce {
+struct SystemForce
+{
   ForceType* force;
   bool active;
 };
@@ -70,17 +72,21 @@ private:
   float removeFarDistance = 1000.0f;
   ForceGenerador forceGenerador;
   void regParticleSysForce(Particle* particle);
-
+  int nextEmitterId = 0;
 public:
   ParticleSystem();
   ~ParticleSystem();
 
-  void addEmitter(const EmitterData& cfg, Particle* model);
+  int addEmitter(const EmitterData& cfg, Particle* model);
   void spawnParticle(Particle* p, float lifetime);
   void update(double dt);
   void addSystemForce(ForceType* force, bool active = true);
   void removeSystemForce(ForceType* force);
   void setSystemForceActive(ForceType* force, bool active);
-  void clearEmitters() { emitters.clear(); }
+  void setEmitterActive(int id, bool active);
+  void updateEmitterPosition(int id, const Vector3& pos);
+  void updateEmitterData(int id, const EmitterData& data);
+  bool isEmitterActive(int id) const;
+  void clearEmitters() { emitters.clear(); nextEmitterId = 0; }
   std::vector<Emitter>& getEmitters() { return emitters; }
 };
