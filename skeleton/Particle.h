@@ -8,19 +8,22 @@ class ForceType;
 
 class Particle {
 protected:
-  Vector3 velocity;
   Vector3 position;
+  Vector3 velocity;
   Vector3 gravity;
-  float damping;
-  float inverseMass = 0.0f;
+  Vector3 forceAccumulator;
+  Vector3 prePosition;
+
   float mass = 1.0f;
+  float inverseMass = 0.0f;
+  float damping;
   float rad;
+
+  int stepNumber = 0;
+
+  Vector4 col;
   physx::PxTransform transform;
   RenderItem* renderItem;
-  Vector3 forceAccumulator;
-  Vector4 col;
-  Vector3 prePosition;
-  int stepNumber = 0;
   ForceGenerador* forceGenerator;
 
 public:
@@ -53,13 +56,21 @@ public:
   void intergrateEulerExplicit(double dt);
   void intergrateEulerSemiExplicit(double dt);
   void intergrateVerlet(double dt);
+
   void addForce(const physx::PxVec3& force);
   void clearForceAccumulator();
   void changeAcceleration(Vector3 newAcceleration);
   void setScale(float scale);
-  ForceGenerador* getForceGenerator() { return forceGenerator; }
+
   void addForceType(ForceType* fg, bool active = true);
   void removeForceType(ForceType* fg);
+  void setForceActive(ForceType* fg, bool active);
+
+  void setPos(const physx::PxVec3& newPos)
+  {
+    position = newPos;
+    transform = physx::PxTransform(position);
+  }
 
   Vector3 getPos() const { return position; }
   Vector3 getVel() const { return velocity; }
@@ -68,10 +79,5 @@ public:
   float getDamping() const { return damping; }
   float getRadius() const { return rad; }
   Vector4 getColor() const { return col; }
-  void setForceActive(ForceType* fg, bool active);
-  void setPos(const physx::PxVec3& newPos)
-  {
-    position = newPos;
-    transform = physx::PxTransform(position);
-  }
+  ForceGenerador* getForceGenerator() { return forceGenerator; }
 };

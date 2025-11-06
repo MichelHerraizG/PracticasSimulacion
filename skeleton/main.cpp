@@ -6,6 +6,7 @@
 #include "ParticleSystem.h"
 #include "RenderUtils.hpp"
 #include "SoccerBall.h"
+#include "TennisBall.h"
 #include "SoccerField.h"
 #include "Wind.h"
 #include "callbacks.hpp"
@@ -26,7 +27,10 @@ PxFoundation* gFoundation = NULL;
 PxPhysics* gPhysics = NULL;
 ParticleSystem* gBallParticleSystem = nullptr;
 PxMaterial* gMaterial = NULL;
+Projectile* gCurrentProjectile = nullptr;
 SoccerBall* gSoccerBall = nullptr;
+TennisBall* gTennisBall = nullptr;
+bool gUsingSoccerBall = true;
 SoccerField* gSoccerField = nullptr;
 PxPvd* gPvd = NULL;
 ShotType gCurrentShotType = POWER_SHOT;
@@ -65,7 +69,7 @@ void CreateWindParticles() {
     windData.velMax = Vector3(8.0f, 12.0f, 8.0f);
 
     Particle* windModel = new Particle(
-        Vector3(30.0f, 2.5f, 0.0f),
+        Vector3(20.0f, 2.5f, 0.0f),
         Vector3(0, 0, 0),
         0.1f,
         windData.damping,
@@ -116,27 +120,34 @@ void initPhysics(bool interactive)
                                STANDARD_BALL,
                                gBallParticleSystem);
 
+  gTennisBall = new TennisBall(PxVec3(0, 1.0f, 0.0f), PxVec3(0, 0, 0));
+  gCurrentProjectile = gSoccerBall; 
   gAimingReticle = new AimingReticle(3.0f);
 
   gEarthGravity = new Gravity(PxVec3(0.0f, -9.8f, 0.0f));
   
 
-  if (gGravityEnabled)
-    gSoccerBall->addForceType(gEarthGravity, true);
+if (gGravityEnabled)
+    gCurrentProjectile->addForceType(gEarthGravity, true);
   if (gWindEnabled)
-    gSoccerBall->addForceType(gWind, true);
+    gCurrentProjectile->addForceType(gWind, true);
 }
 
 void Kick()
 {
-  if (gSoccerBall && gAimingReticle) {
+  if (gCurrentProjectile && gAimingReticle) {
     Vector3 kickDir = Vector3(gAimingReticle->getAimDirection().x,
                               0.22f,
                               gAimingReticle->getAimDirection().z);
 
-    gSoccerBall->setInPlay(true);
-    gSoccerBall->setShotType(gCurrentShotType);
-    gSoccerBall->launch(PxVec3(kickDir.x, kickDir.y, kickDir.z), 2.0f);
+    gCurrentProjectile->setInPlay(true);
+
+    if (gUsingSoccerBall) {
+      SoccerBall* soccer = static_cast<SoccerBall*>(gCurrentProjectile);
+      soccer->setShotType(gCurrentShotType);
+    }
+
+    gCurrentProjectile->launch(PxVec3(kickDir.x, kickDir.y, kickDir.z), 2.0f);
   }
 }
 
@@ -153,19 +164,18 @@ void ToggleShotType()
   }
 }
 
-void ResetSoccerBall()
+void ResetProjectile()
 {
-  if (gSoccerBall) {
-    gSoccerBall->reset();
+  if (gCurrentProjectile) {
+    gCurrentProjectile->reset();
   }
   gExplosionTimer = 0.0;
   gExplosionTriggered = false;
 
-  if (gExplosionParticleSystem) 
-  {
-      delete gExplosionParticleSystem;
-      gExplosionParticleSystem = new ParticleSystem();
-      gExplosionParticleSystem->addSystemForce(gExplosion, false);
+  if (gExplosionParticleSystem) {
+    delete gExplosionParticleSystem;
+    gExplosionParticleSystem = new ParticleSystem();
+    gExplosionParticleSystem->addSystemForce(gExplosion, false);
   }
 }
 
@@ -200,31 +210,28 @@ void stepPhysics(bool interactive, double t)
   PX_UNUSED(interactive);
   gForceTypes.updateForces(t);
 
-  if (gSoccerBall) {
-    gSoccerBall->integrateForces(t);
-
+ if (gCurrentProjectile) {
+    gCurrentProjectile->integrateForces(t);
   }
 
   for (auto proj : projectiles) {
     proj->integrateForces(t);
   }
 
-  if (gAimingReticle && gSoccerBall && !gSoccerBall->isInPlay()) {
-    gAimingReticle->update(gSoccerBall->getPos());
+  if (gAimingReticle && gCurrentProjectile && !gCurrentProjectile->isInPlay()) {
+    gAimingReticle->update(gCurrentProjectile->getPos());
   }
 
   if (gBallParticleSystem)
     gBallParticleSystem->update(t);
-  if (gSoccerBall && gSoccerBall->isInPlay()) {
-      gExplosionTimer += t;
+  if (gCurrentProjectile && gCurrentProjectile->isInPlay()) {
+    gExplosionTimer += t;
 
-    
-      if (gExplosionTimer >= 3.0 && !gExplosionTriggered) {
-          gExplosionTriggered = true;
-
-          gExplosion->trigger();
-          CreateExplosionParticles();
-      }
+    if (gExplosionTimer >= 3.0 && !gExplosionTriggered) {
+      gExplosionTriggered = true;
+      gExplosion->trigger();
+      CreateExplosionParticles();
+    }
   }
 
   if (gExplosionParticleSystem) {
@@ -257,14 +264,26 @@ void Shoot()
   gForceTypes.add(proj, gEarthGravity, true);
   projectiles.push_back(proj);
 }
-void ToggleBallType()
+void ToggleProjectileType()
 {
-    if (gSoccerBall) {
-        if (gSoccerBall->getBallType() == STANDARD_BALL)
-            gSoccerBall->setBallType(LIGHT_BALL);
-        else
-            gSoccerBall->setBallType(STANDARD_BALL);
-    }
+  gUsingSoccerBall = !gUsingSoccerBall;
+
+  if (gSoccerBall)
+    gSoccerBall->reset();
+  if (gTennisBall)
+    gTennisBall->reset();
+
+  if (gUsingSoccerBall) {
+    gCurrentProjectile = gSoccerBall;
+  }
+  else {
+    gCurrentProjectile = gTennisBall;
+  }
+
+  if (gCurrentProjectile) {
+    gCurrentProjectile->setForceActive(gEarthGravity, gGravityEnabled);
+    gCurrentProjectile->setForceActive(gWind, gWindEnabled);
+  }
 }
 
 void cleanupPhysics(bool interactive)
@@ -290,6 +309,11 @@ void cleanupPhysics(bool interactive)
     delete gSoccerBall;
     gSoccerBall = nullptr;
   }
+  if (gTennisBall) {
+    delete gTennisBall;
+    gTennisBall = nullptr;
+  }
+  gCurrentProjectile = nullptr;
   if (gAimingReticle) {
     delete gAimingReticle;
     gAimingReticle = nullptr;
@@ -313,6 +337,12 @@ void keyPress(unsigned char key, const PxTransform& camera)
       gWindEnabled = !gWindEnabled;
       if (gSoccerBall)
           gSoccerBall->setForceActive(gWind, gWindEnabled);
+      if (gWindParticleSystem) {
+        auto& emitters = gWindParticleSystem->getEmitters();
+        for (size_t i = 0; i < emitters.size(); ++i) {
+          gWindParticleSystem->setEmitterActive(i, gWindEnabled);
+        }
+      }
       break;
     case 'G':
       gGravityEnabled = !gGravityEnabled;
@@ -332,13 +362,13 @@ void keyPress(unsigned char key, const PxTransform& camera)
       Kick();
       break;
     case 'R':
-      ResetSoccerBall();
+      ResetProjectile();
       break;
     case 'T':
       ToggleShotType();
       break;
     case 'B':
-        ToggleBallType();
+        ToggleProjectileType();
         break;
     default:
       break;

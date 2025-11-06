@@ -40,6 +40,7 @@
     <ClInclude Include="Projectile.h" />
     <ClInclude Include="ForceType.h" />
     <ClInclude Include="ForceGenerador.h" />
+    <ClInclude Include="TennisBall.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Render">

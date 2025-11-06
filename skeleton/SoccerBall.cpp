@@ -16,7 +16,7 @@ SoccerBall::SoccerBall(const PxVec3& pos,
     , auraIndex(-1)
 {
     setBallType(type);
-
+    scalePhysics(0.95f);
     if (parSys) {
         EmitterData cfg;
         cfg.emitRate = 100.0f;
@@ -56,12 +56,12 @@ void SoccerBall::setBallType(BallType type)
 
     if (type == LIGHT_BALL) {
 
-        setMass(0.1f);
+        setMass(0.05f);
         damping = 0.95f;
         setScale(0.5f);
     }
     else {
-        setMass(0.89f);
+        setMass(0.90f);
         damping = 0.99f;
         setScale(1.0f);
     }
@@ -72,7 +72,6 @@ void SoccerBall::launch(const PxVec3& direction, float power)
     PxVec3 dir = direction.getNormalized();
     float kickForce = 0.0f;
 
-    // Incrementar emisión del aura durante el lanzamiento
     if (parSys && auraIndex >= 0) {
         EmitterData currentData = parSys->getEmitters()[auraIndex].getData();
         currentData.emitRate = 120.0f;
@@ -101,7 +100,7 @@ void SoccerBall::launch(const PxVec3& direction, float power)
     }
 
     velocity = dir * kickForce;
-    scalePhysics(0.95f);
+ 
     clearForceAccumulator();
     inPlay = true;
 }

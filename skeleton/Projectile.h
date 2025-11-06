@@ -1,6 +1,7 @@
 #pragma once
-#include "Particle.h" 
-#include "ForceType.h" 
+#include "ForceType.h"
+#include "Particle.h"
+
 class Projectile : public Particle {
 public:
   Projectile(const PxVec3& pos = PxVec3(0.0f),
@@ -9,20 +10,31 @@ public:
              float damping = 0.99f,
              float radius = 0.1f,
              const Vector4& color = Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+
   virtual ~Projectile();
+
+
   virtual void launch(const PxVec3& direction, float power) = 0;
+
+
   virtual void reset();
+
+
   virtual void integrateForces(double dt) override;
+
+
   virtual void scalePhysics(float velocityScale);
+
+
   void setMass(float newMass);
-  float getRealMass() const { return realMass; }
+  float getRealMass() const { return masaReal; }
   float getSimulatedMass() const { return mass; }
   bool isInPlay() const { return inPlay; }
-  void setInPlay(bool v) { inPlay = v; }
+  void setInPlay(bool value) { inPlay = value; }
 
 protected:
   PxVec3 initialPos; 
-  bool inPlay;      
-  float gravityScale;
-  float realMass;
+  bool inPlay;          
+  float gravityScale;    
+  float masaReal;          
 };

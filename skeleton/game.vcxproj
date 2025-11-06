@@ -281,6 +281,7 @@
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="SoccerBall.h" />
     <ClInclude Include="SoccerField.h" />
+    <ClInclude Include="TennisBall.h" />
     <ClInclude Include="Vector3D.h" />
     <ClInclude Include="Vortex.h" />
     <ClInclude Include="Wind.h" />
