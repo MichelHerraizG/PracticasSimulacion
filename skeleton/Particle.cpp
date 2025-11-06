@@ -1,7 +1,7 @@
-#include "Particle.h"
 #include "ForceGenerador.h"
-#include "RenderUtils.hpp"
+#include "Particle.h"
 #include "core.hpp"
+#include "RenderUtils.hpp"
 #include <cmath>
 
 using namespace physx;
@@ -93,8 +93,7 @@ Particle::~Particle()
 
 void Particle::integrateForces(double dt)
 {
-  if (inverseMass <= 0.0f)
-    return;
+  if (inverseMass <= 0.0f) return;
 
   forceGenerator->updateForces(dt);
 
@@ -128,8 +127,7 @@ void Particle::intergrateVerlet(double dt)
   if (stepNumber > 0) {
     prePosition = position;
     position = 2 * position - prePosition + ((dt * dt) * gravity);
-  }
-  else {
+  } else {
     prePosition = position;
     velocity += gravity * dt;
     position += velocity * dt;
@@ -168,18 +166,15 @@ void Particle::setScale(float scale)
 
 void Particle::addForceType(ForceType* fg, bool active)
 {
-  if (forceGenerator)
-    forceGenerator->add(this, fg, active);
+  if (forceGenerator) forceGenerator->add(this, fg, active);
 }
 
 void Particle::removeForceType(ForceType* fg)
 {
-  if (forceGenerator)
-    forceGenerator->remove(this, fg);
+  if (forceGenerator) forceGenerator->remove(this, fg);
 }
 
 void Particle::setForceActive(ForceType* fg, bool active)
 {
-  if (forceGenerator)
-    forceGenerator->setActive(fg, active);
+  if (forceGenerator) forceGenerator->setActive(fg, active);
 }
