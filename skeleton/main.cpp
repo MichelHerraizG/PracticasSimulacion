@@ -18,7 +18,7 @@
 
 std::string display_text =
   "K: Kick, R: Reset Ball, T: Toggle Shot Type\n"
-  "G: Toggle Gravity, W: Toggle Wind";
+  "G: Toggle Gravity, V: Toggle Wind";
 using namespace physx;
 
 PxDefaultAllocator gAllocator;
