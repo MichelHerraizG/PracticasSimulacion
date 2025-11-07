@@ -29,7 +29,15 @@ public:
                                        }),
                         registrations.end());
   }
-
+  void removeAll(Particle* particle)
+  {
+      registrations.erase(
+          std::remove_if(registrations.begin(), registrations.end(),
+              [=](const ForceEntry& r) {
+                  return r.particle == particle;
+              }),
+          registrations.end());
+  }
   void clear() { registrations.clear(); }
   void setActive(ForceType* fg, bool act)
   {

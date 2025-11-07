@@ -3,7 +3,7 @@
 #include "core.hpp"
 using namespace physx;
 
-class ForceGenerador;
+#include "ForceGenerador.h"
 class ForceType;
 
 class Particle {
@@ -82,4 +82,7 @@ public:
   ForceGenerador* getForceGenerator() { return forceGenerator; }
   RenderItem* getRenderItem() { return renderItem; }
   void setVisible(bool visible);
+  void clearForces() {
+      forceGenerator->removeAll(this);
+  }
 };

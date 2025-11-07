@@ -11,7 +11,7 @@ public:
              const Vector4& color = Vector4(0.9f, 1.0f, 0.4f, 1.0f))
     : Projectile(pos, vel, mass, damping, radius, color)
   {
-    scalePhysics(0.6f);
+    scalePhysics(0.8f);
   }
 
   void launch(const PxVec3& direction, float power) override

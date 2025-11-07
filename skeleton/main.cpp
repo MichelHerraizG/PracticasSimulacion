@@ -281,8 +281,9 @@ void ToggleProjectileType()
       }
     }
   }
-
+  
   if (gCurrentProjectile) {
+      gCurrentProjectile->clearForces();
     gCurrentProjectile->addForceType(gEarthGravity, gGravityEnabled);
     gCurrentProjectile->addForceType(gWind, gWindEnabled);
   }
