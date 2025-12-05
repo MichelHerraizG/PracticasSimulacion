@@ -65,7 +65,10 @@ void Projectile::scalePhysics(float velocityScale)
 
   gravityScale = k2;
 }
-
+void Projectile::addForce(const PxVec3& force)
+{
+  Particle::addForce(force);
+}
 void Projectile::setMass(float newMass)
 {
   mass = newMass;

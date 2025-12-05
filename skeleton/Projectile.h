@@ -13,18 +13,13 @@ public:
 
   virtual ~Projectile();
 
-
   virtual void launch(const PxVec3& direction, float power) = 0;
-
-
   virtual void reset();
-
-
   virtual void integrateForces(double dt) override;
-
-
   virtual void scalePhysics(float velocityScale);
 
+
+  virtual void addForce(const PxVec3& force);
 
   void setMass(float newMass);
   float getRealMass() const { return masaReal; }
@@ -33,8 +28,8 @@ public:
   void setInPlay(bool value) { inPlay = value; }
 
 protected:
-  PxVec3 initialPos; 
-  bool inPlay;          
-  float gravityScale;    
-  float masaReal;          
+  PxVec3 initialPos;
+  bool inPlay;
+  float gravityScale;
+  float masaReal;
 };
