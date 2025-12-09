@@ -1,19 +1,30 @@
 #pragma once
-#include "core.hpp"
+#include "PxPhysicsAPI.h"
 #include "RenderUtils.hpp"
 #include <vector>
+
 using namespace physx;
+
 class SoccerField {
+public:
+  SoccerField(float scale, PxScene* scene);
+  ~SoccerField();
+
+  PxVec3 getGoalPosition() const { return goalPos; }
+
 private:
-  std::vector<const RenderItem*> m_renderItems;
+  void createField();
+  void createGround();
+  void createGoalPosts();
+  void createGoalTrigger();
+
   PxVec3 goalPos;
   float scaleFactor;
-  std::vector<PxTransform*> m_transforms;
+  PxScene* myScene;
 
-public:
-  SoccerField(float scaleFactor = 1.0f);
-  ~SoccerField();
-  void createField();
-  PxVec3 getGoalPosition() const { return goalPos; }
-  bool isGoal(const PxVec3& ballPos) const;
+  std::vector<PxTransform*> mTrs;
+  std::vector<RenderItem*> mRIs;
+  std::vector<PxRigidStatic*> mActors;
+
+  PxRigidStatic* triggerDeGol;  
 };

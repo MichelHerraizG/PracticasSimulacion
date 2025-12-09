@@ -9,3 +9,6 @@ public:
   virtual ~ForceType() = default;
   virtual void updateForce(Particle* particle, double dt) = 0;
 };
+
+
+

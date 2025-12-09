@@ -103,7 +103,7 @@ void initPhysics(bool interactive)
   gScene = gPhysics->createScene(sceneDesc);
 
   gBallParticleSystem = new ParticleSystem();
-  gSoccerField = new SoccerField(2.0f);
+  gSoccerField = new SoccerField(2.0f, gScene);
   gExplosionParticleSystem = new ParticleSystem();
   gExplosion = new Explosion(Vector3(0, 0, 0), 200.0f, 200.0f, 200.0f);
   gExplosionParticleSystem->addSystemForce(gExplosion, true);
@@ -111,45 +111,43 @@ void initPhysics(bool interactive)
   gWind = new Wind(Vector3(-20, 0, 0));
   gWindParticleSystem->addSystemForce(gWind, true);
   CreateWindParticles();
-  gSoccerBall = new SoccerBall(PxVec3(0, 1.0f, 0.0f),
-                               PxVec3(30.0f, 0, 0),
-                               0.43f,
-                               0.99f,
-                               0.60f,
-                               Vector4(1, 1, 1, 1),
-                               STANDARD_BALL,
-                               gBallParticleSystem);
+  gSoccerBall =
+    new SoccerBall(PxVec3(0, 1.0f, 0.0f), 
+                   PxVec3(0, 0, 0),    
+                   0.43f,              
+                   0.99f,             
+                   0.6f,  
+                   Vector4(1, 1, 1, 1),  
+                   STANDARD_BALL,       
+                   gBallParticleSystem,
+                   gScene,               
+                   gPhysics,        
+                   gMaterial            
+    );
 
-  gTennisBall = new TennisBall(PxVec3(0, 1.0f, 0.0f), PxVec3(0, 0, 0));
-  if (gTennisBall && gTennisBall->getRenderItem())
-    DeregisterRenderItem(gTennisBall->getRenderItem());
-  gCurrentProjectile = gSoccerBall; 
+ 
   gAimingReticle = new AimingReticle(3.0f);
 
   gEarthGravity = new Gravity(PxVec3(0.0f, -9.8f, 0.0f));
   
 
-if (gGravityEnabled)
-    gCurrentProjectile->addForceType(gEarthGravity, true);
+ if (gGravityEnabled)
+    gSoccerBall->addForceType(gEarthGravity, true);
   if (gWindEnabled)
-    gCurrentProjectile->addForceType(gWind, true);
+    gSoccerBall->addForceType(gWind, true);
 }
 
 void Kick()
 {
-  if (gCurrentProjectile && gAimingReticle) {
+  if (gSoccerBall && gAimingReticle) {
     Vector3 kickDir = Vector3(gAimingReticle->getAimDirection().x,
-                              0.22f,
+                              0.7f,  
                               gAimingReticle->getAimDirection().z);
 
-    gCurrentProjectile->setInPlay(true);
+    gSoccerBall->setInPlay(true);
+    gSoccerBall->setShotType(gCurrentShotType);
+    gSoccerBall->launch(PxVec3(kickDir.x, kickDir.y, kickDir.z), 2.0f);
 
-    if (gUsingSoccerBall) {
-      SoccerBall* soccer = static_cast<SoccerBall*>(gCurrentProjectile);
-      soccer->setShotType(gCurrentShotType);
-    }
-
-    gCurrentProjectile->launch(PxVec3(kickDir.x, kickDir.y, kickDir.z), 2.0f);
   }
 }
 
@@ -168,8 +166,8 @@ void ToggleShotType()
 
 void ResetProjectile()
 {
-  if (gCurrentProjectile) {
-    gCurrentProjectile->reset();
+  if (gSoccerBall) {
+    gSoccerBall->reset();
   }
   gExplosionTimer = 0.0;
   gExplosionTriggered = false;
@@ -210,19 +208,19 @@ void CreateExplosionParticles() {
 void stepPhysics(bool interactive, double t)
 {
   PX_UNUSED(interactive);
-  gForceTypes.updateForces(t);
 
- if (gCurrentProjectile) {
-    gCurrentProjectile->integrateForces(t);
+  if (gSoccerBall) {
+    gSoccerBall->integrateForces(t);
   }
 
-  if (gAimingReticle && gCurrentProjectile && !gCurrentProjectile->isInPlay()) {
-    gAimingReticle->update(gCurrentProjectile->getPos());
+  if (gAimingReticle && gSoccerBall && !gSoccerBall->isInPlay()) {
+    gAimingReticle->update(gSoccerBall->getPos());
   }
 
   if (gBallParticleSystem)
     gBallParticleSystem->update(t);
-  if (gCurrentProjectile && gCurrentProjectile->isInPlay()) {
+
+  if (gSoccerBall && gSoccerBall->isInPlay()) {
     gExplosionTimer += t;
 
     if (gExplosionTimer >= 3.0 && !gExplosionTriggered) {
@@ -233,61 +231,23 @@ void stepPhysics(bool interactive, double t)
   }
 
   if (gExplosionParticleSystem) {
-      gExplosionParticleSystem->update(t);
+    gExplosionParticleSystem->update(t);
   }
   if (gWindParticleSystem) {
-      gWindParticleSystem->update(t);
+    gWindParticleSystem->update(t);
   }
+
+
   gScene->simulate(t);
   gScene->fetchResults(true);
-}
 
 
-
-void ToggleProjectileType()
-{
-  gUsingSoccerBall = !gUsingSoccerBall;
-
-  if (gSoccerBall)
-    gSoccerBall->reset();
-  if (gTennisBall)
-    gTennisBall->reset();
-
-  if (gUsingSoccerBall) {
-    gCurrentProjectile = gSoccerBall;
-    if (gSoccerBall && gSoccerBall->getRenderItem())
-      RegisterRenderItem(gSoccerBall->getRenderItem());
-    if (gTennisBall && gTennisBall->getRenderItem())
-      DeregisterRenderItem(gTennisBall->getRenderItem());
-
-    if (gBallParticleSystem) {
-      auto& emitters = gBallParticleSystem->getEmitters();
-      for (int i = 0; i < emitters.size(); ++i) {
-        gBallParticleSystem->setEmitterActive(i, true);
-      }
-    }
-  }
-  else {
-    gCurrentProjectile = gTennisBall;
-    if (gTennisBall && gTennisBall->getRenderItem())
-      RegisterRenderItem(gTennisBall->getRenderItem());
-    if (gSoccerBall && gSoccerBall->getRenderItem())
-      DeregisterRenderItem(gSoccerBall->getRenderItem());
-
-    if (gBallParticleSystem) {
-      auto& emitters = gBallParticleSystem->getEmitters();
-      for (int i = 0; i < emitters.size(); ++i) {
-        gBallParticleSystem->setEmitterActive(i, false);
-      }
-    }
-  }
-  
-  if (gCurrentProjectile) {
-      gCurrentProjectile->clearForces();
-    gCurrentProjectile->addForceType(gEarthGravity, gGravityEnabled);
-    gCurrentProjectile->addForceType(gWind, gWindEnabled);
+  if (gSoccerBall) {
+    gSoccerBall->update(t);
   }
 }
+
+
 void cleanupPhysics(bool interactive)
 {
   PX_UNUSED(interactive);
@@ -335,45 +295,53 @@ void keyPress(unsigned char key, const PxTransform& camera)
   PX_UNUSED(camera);
 
   switch (toupper(key)) {
-  case 'V':
+    case 'V':
       gWindEnabled = !gWindEnabled;
-      if (gCurrentProjectile)
-        gCurrentProjectile->setForceActive(gWind, gWindEnabled);
+      if (gSoccerBall)
+        gSoccerBall->setForceActive(gWind, gWindEnabled);
       if (gWindParticleSystem) {
         auto& emitters = gWindParticleSystem->getEmitters();
         for (size_t i = 0; i < emitters.size(); ++i) {
           gWindParticleSystem->setEmitterActive(i, gWindEnabled);
         }
       }
+      std::cout << "Viento: " << (gWindEnabled ? "ON" : "OFF") << std::endl;
       break;
+
     case 'G':
       gGravityEnabled = !gGravityEnabled;
       if (gSoccerBall)
-          gSoccerBall->setForceActive(gEarthGravity, gGravityEnabled);
+        gSoccerBall->setForceActive(gEarthGravity, gGravityEnabled);
+      std::cout << "Gravedad: " << (gGravityEnabled ? "ON" : "OFF")
+                << std::endl;
       break;
+
     case 'A':
-      gAimingReticle->rotateLeft(RETICLEROT);
+      if (gAimingReticle)
+        gAimingReticle->rotateLeft(RETICLEROT);
       break;
+
     case 'D':
-      gAimingReticle->rotateRight(RETICLEROT);
+      if (gAimingReticle)
+        gAimingReticle->rotateRight(RETICLEROT);
       break;
+
     case 'K':
       Kick();
       break;
+
     case 'R':
       ResetProjectile();
       break;
+
     case 'T':
       ToggleShotType();
       break;
-    case 'B':
-        ToggleProjectileType();
-        break;
+
     default:
       break;
   }
 }
-
 void onCollision(physx::PxActor* actor1, physx::PxActor* actor2)
 {
   PX_UNUSED(actor1);

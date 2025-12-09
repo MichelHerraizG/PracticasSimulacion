@@ -56,7 +56,7 @@ public:
   void intergrateEulerExplicit(double dt);
   void intergrateEulerSemiExplicit(double dt);
   void intergrateVerlet(double dt);
-
+  Vector3 getForce() const { return forceAccumulator; }
   void addForce(const physx::PxVec3& force);
   void clearForceAccumulator();
   void changeAcceleration(Vector3 newAcceleration);
