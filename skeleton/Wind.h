@@ -31,6 +31,22 @@ public:
 
     particle->addForce(force);
   }
+  virtual void updateForceRigid(physx::PxRigidDynamic* rigid, double t) override {
+      if (!rigid) return;
+
+      physx::PxVec3 vel = rigid->getLinearVelocity();
+      Vector3 particleVel(vel.x, vel.y, vel.z);
+
+
+      Vector3 diff = windVelocity - particleVel;
+      float speed = diff.magnitude();
+
+      // Fv = k1 * diff + k2 * |diff| * diff
+      Vector3 force = k1 * diff + k2 * speed * diff;
+
+      // Aplicar fuerza al sólido rígido
+      rigid->addForce(physx::PxVec3(force.x, force.y, force.z));
+  }
   void setWindVelocity(const Vector3& wVel) { windVelocity = wVel; }
 
   
