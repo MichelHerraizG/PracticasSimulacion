@@ -1,23 +1,27 @@
 #pragma once
-#include "Projectile.h"
+#include "Ball.h"
 
-class TennisBall : public Projectile {
+class TennisBall : public Ball {
+private:
+  bool isSpinning;
+  void createRigidBody(PxPhysics* physics, PxMaterial* material) override;
+
 public:
   TennisBall(const PxVec3& pos,
              const PxVec3& vel,
-             float mass = 0.057f,
-             float damping = 0.96f,
-             float radius = 0.2f,
-             const Vector4& color = Vector4(0.9f, 1.0f, 0.4f, 1.0f))
-    : Projectile(pos, vel, mass, damping, radius, color)
-  {
-    scalePhysics(0.8f);
-  }
+             float mass,
+             float damping,
+             float rad,
+             const Vector4& col,
+             BallType type,
+             ParticleSystem* system,
+             PxScene* scene,
+             PxPhysics* physics,
+             PxMaterial* material);
 
-  void launch(const PxVec3& direction, float power) override
-  {
-    velocity = direction.getNormalized() * (power * 20.0f);
-    clearForceAccumulator();
-    inPlay = true;
-  }
+  ~TennisBall();
+  void launch(const PxVec3& direction, float power) override;
+  void reset() override;
+  void update(double dt) override;
+  void setShotType(ShotType type) override;
 };

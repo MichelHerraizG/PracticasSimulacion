@@ -64,14 +64,12 @@ void SoccerField::createGround()
 
 void SoccerField::createGoalPosts()
 {
-  // CREO UNA SOLA GEOMETRÍA PARA 2 PALOS
   PxBoxGeometry postGeometry(
     0.1f * scaleFactor, 2.5f * scaleFactor, 0.1f * scaleFactor);
-  // CREO UNA GEOMETRÍA PARA EL LARGUERO
   PxBoxGeometry crossbarGeometry(
     3.8f * scaleFactor, 0.1f * scaleFactor, 0.1f * scaleFactor);
 
-  // POSTE IZQUIERDO
+
   PxVec3 leftPostPos = goalPos + PxVec3(-3.66f * scaleFactor, 0, 0);
   PxTransform leftPostTransform(leftPostPos);
   PxRigidStatic* leftPostActor = gPhysics->createRigidStatic(leftPostTransform);
@@ -88,7 +86,6 @@ void SoccerField::createGoalPosts()
   mTrs.push_back(leftPostRenderTransform);
   leftPostShape->release();
 
-   // POSTE DERECHO
   PxVec3 rightPostPos = goalPos + PxVec3(3.66f * scaleFactor, 0, 0);
   PxTransform rightPostTransform(rightPostPos);
   PxRigidStatic* rightPostActor =
@@ -106,7 +103,6 @@ void SoccerField::createGoalPosts()
   mTrs.push_back(rightPostRenderTransform);
   rightPostShape->release();
 
- // LARGUERO
     PxVec3 crossbarPos = goalPos + PxVec3(0, 2.44f * scaleFactor, 0);
   PxTransform crossbarTransform(crossbarPos);
   PxRigidStatic* crossbarActor = gPhysics->createRigidStatic(crossbarTransform);
@@ -148,8 +144,6 @@ void SoccerField::createGoalTrigger()
 
 
   myScene->addActor(*triggerDeGol);
-
-  // RENDERIZO PARA DEBUG
   PxTransform* triggerRenderTransform = new PxTransform(triggerTransform);
   RenderItem* triggerRender = new RenderItem(
     triggerShape, Vector4(1.0f, 1.0f, 0.0f, 0.3f));  

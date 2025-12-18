@@ -11,6 +11,7 @@ public:
   ~SoccerField();
 
   PxVec3 getGoalPosition() const { return goalPos; }
+  PxRigidStatic* getGoalTrigger() const { return triggerDeGol; }
 
 private:
   void createField();

@@ -1,33 +1,38 @@
 #pragma once
-#include "core.hpp"
 #include "ForceType.h"
 #include "Particle.h"
+#include "core.hpp"
+#include <PxPhysicsAPI.h>
+
 class Gravity : public ForceType {
 private:
-  physx::PxVec3 gravity;
+  Vector3 gravityAcceleration;
 
 public:
-
-  Gravity(const physx::PxVec3& g)
-    : gravity(g)
+  Gravity(const Vector3& gravity)
+    : gravityAcceleration(gravity)
   {
   }
-
 
   virtual void updateForce(Particle* particle, double dt) override
   {
-
-    if (particle->getInverseMass() <= 0.0f)
+    if (!particle || particle->getInverseMass() == 0)
       return;
 
-
-    physx::PxVec3 force = gravity * particle->getMass();
-
+    // F = m * g
+    Vector3 force = gravityAcceleration * particle->getMass();
     particle->addForce(force);
   }
 
+  virtual void updateForceRigid(physx::PxRigidDynamic* rigid,
+                                double dt) override
+  {
+    // PhysX ya maneja la gravedad por defecto en la escena,
+    // pero si quisiéramos aplicar una gravedad adicional:
+    // (Por ahora dejamos esto vacío ya que PhysX maneja la gravedad)
+  }
 
-  physx::PxVec3 getGravity() const { return gravity; }
+  void setGravity(const Vector3& gravity) { gravityAcceleration = gravity; }
 
-  void setGravity(const physx::PxVec3& g) { gravity = g; }
+  const Vector3& getGravity() const { return gravityAcceleration; }
 };

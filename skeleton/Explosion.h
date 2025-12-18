@@ -19,7 +19,17 @@ public:
     active = true;
     elapsedTime = 0.0f;
   }
+  void update(double dt)
+  {
+    if (!active)
+      return;
 
+    elapsedTime += dt;
+
+    if (elapsedTime >= 4.0f * tau) {
+      active = false;
+    }
+  }
   void triggerAtPosition(const Vector3& newCenter)
   {
     center = newCenter;
@@ -27,40 +37,25 @@ public:
   }
   void deactivate() { active = false; }
   bool isActive() const { return active; }
-  virtual void updateForce(Particle* particle, double t) override
+  virtual void updateForce(Particle* particle, double dt) override
   {
     if (!particle || particle->getInverseMass() == 0 || !active)
       return;
 
-    elapsedTime += t;
-
-    if (elapsedTime >= 4.0f * tau) {
-      active = false;
-      return;
-    }
-
-
-    Vector3 pos = particle->getPos();
-
-    Vector3 diff = pos - center;
+    Vector3 diff = particle->getPos() - center;
     float r = diff.magnitude();
 
-   if (r >= R)
+    if (r >= R)
       return;
-
     if (r < 0.001f)
       r = 0.001f;
 
     float expFactor = std::exp(-elapsedTime / tau);
-
     float forceMagnitude = (K / (r * r)) * expFactor;
 
-    Vector3 direction = diff / r;
-
-    Vector3 force = direction * forceMagnitude;
-
-    particle->addForce(force);
+    particle->addForce((diff / r) * forceMagnitude);
   }
+
   virtual void updateForceRigid(physx::PxRigidDynamic* rigid, double t) override {
       if (!rigid || !active || rigid->getMass() == 0) return;
 

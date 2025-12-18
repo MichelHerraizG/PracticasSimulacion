@@ -16,6 +16,12 @@
     <ClCompile Include="SoccerField.cpp" />
     <ClCompile Include="AimingReticle.cpp" />
     <ClCompile Include="Projectile.cpp" />
+    <ClCompile Include="Goalkeeper.cpp" />
+    <ClCompile Include="PowerMeter.cpp" />
+    <ClCompile Include="Barrier.cpp" />
+    <ClCompile Include="DefensiveEntity.cpp" />
+    <ClCompile Include="Ball.cpp" />
+    <ClCompile Include="TennisBall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp" />
@@ -36,11 +42,18 @@
     <ClInclude Include="Explosion.h" />
     <ClInclude Include="SoccerBall.h" />
     <ClInclude Include="SoccerField.h" />
-    <ClInclude Include="AimingReticle.h" />
     <ClInclude Include="Projectile.h" />
     <ClInclude Include="ForceType.h" />
     <ClInclude Include="ForceGenerador.h" />
+    <ClInclude Include="Goalkeeper.h" />
+    <ClInclude Include="AnchoredSpring.h" />
+    <ClInclude Include="SpringAnchor.h" />
+    <ClInclude Include="PowerMeter.h" />
+    <ClInclude Include="Barrier.h" />
+    <ClInclude Include="DefensiveEntity.h" />
+    <ClInclude Include="Ball.h" />
     <ClInclude Include="TennisBall.h" />
+    <ClInclude Include="AimingReticle.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Render">

@@ -29,3 +29,15 @@ void ContactReportCallback::onContact(const physx::PxContactPairHeader& pairHead
 	physx::PxActor* actor2 = pairHeader.actors[1];
 	onCollision(actor1, actor2);
 }
+void ContactReportCallback::onTrigger(physx::PxTriggerPair* pairs,
+                                      physx::PxU32 count)
+{
+  for (physx::PxU32 i = 0; i < count; i++) {
+    if (pairs[i].status & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND) {
+      physx::PxActor* triggerActor = pairs[i].triggerActor;
+      physx::PxActor* otherActor = pairs[i].otherActor;
+
+      onCollision(triggerActor, otherActor);
+    }
+  }
+}
